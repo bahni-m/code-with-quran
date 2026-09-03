@@ -4,17 +4,19 @@ const quran = require('./quran');
 const { loadConfig, saveConfig, coerceValue, DEFAULTS, KEY_TYPES } = require('./config');
 const { loadState, saveState, resetState, position } = require('./state');
 const { openUrl } = require('./open');
+const { isSessionActive } = require('./session');
 
 /**
  * The heart of the tool: open the current ayah, then advance the pointer.
  *
  * @param {object} [opts]
- * @param {boolean} [opts.force]   ignore the cooldown
- * @param {boolean} [opts.dryRun]  compute everything, open nothing, persist nothing
- * @param {Date}    [opts.now]     injectable clock (tests)
+ * @param {boolean} [opts.force]        ignore the cooldown
+ * @param {boolean} [opts.dryRun]       compute everything, open nothing, persist nothing
+ * @param {boolean} [opts.sessionOnly]  no-op unless the session was activated via the wrapper
+ * @param {Date}    [opts.now]          injectable clock (tests)
  * @returns {{
  *   opened: boolean,
- *   reason?: 'disabled' | 'cooldown',
+ *   reason?: 'disabled' | 'cooldown' | 'inactive',
  *   shownFrom: {surah:number,ayah:number},
  *   nextPosition: {surah:number,ayah:number},
  *   url: string,
@@ -23,7 +25,7 @@ const { openUrl } = require('./open');
  * }}
  */
 function open(opts = {}) {
-  const { force = false, dryRun = false, now = new Date() } = opts;
+  const { force = false, dryRun = false, sessionOnly = false, now = new Date() } = opts;
   const config = loadConfig();
   const state = loadState();
   const shownFrom = position(state);
@@ -34,6 +36,10 @@ function open(opts = {}) {
     total: quran.TOTAL_AYAT,
     percent: Math.round((idx / quran.TOTAL_AYAT) * 1000) / 10,
   };
+
+  if (sessionOnly && !isSessionActive()) {
+    return { opened: false, reason: 'inactive', shownFrom, nextPosition: shownFrom, url, progress };
+  }
 
   if (!config.enabled) {
     return { opened: false, reason: 'disabled', shownFrom, nextPosition: shownFrom, url, progress };

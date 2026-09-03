@@ -10,24 +10,24 @@ const SUPPORTED_EVENTS = ['UserPromptSubmit', 'Notification', 'Stop', 'SubagentS
 const DEFAULT_EVENTS = ['UserPromptSubmit'];
 
 /** Substring that identifies a hook entry as ours. */
-const SIGNATURE = 'waitwithayat';
+const SIGNATURE = 'code-with-quran';
 
 /**
  * Best command string to invoke the CLI from a Claude Code hook.
- * Prefers a `waitwithayat` on PATH; falls back to an absolute node invocation.
+ * Prefers a `code-with-quran` on PATH; falls back to an absolute node invocation.
  */
 function resolveCommand() {
-  const binPath = path.join(__dirname, '..', 'bin', 'waitwithayat.js');
+  const binPath = path.join(__dirname, '..', 'bin', 'code-with-quran.js');
   let onPath = false;
   try {
     const probe = process.platform === 'win32' ? 'where' : 'which';
-    execFileSync(probe, ['waitwithayat'], { stdio: 'ignore' });
+    execFileSync(probe, ['code-with-quran'], { stdio: 'ignore' });
     onPath = true;
   } catch {
     onPath = false;
   }
-  const base = onPath ? 'waitwithayat' : `"${process.execPath}" "${binPath}"`;
-  return `${base} open --quiet`;
+  const base = onPath ? 'code-with-quran' : `"${process.execPath}" "${binPath}"`;
+  return `${base} open --quiet --session-only`;
 }
 
 function readSettings(file) {
@@ -53,7 +53,7 @@ function backup(file) {
   return dest;
 }
 
-/** Strip every waitwithayat entry from a settings object. Returns count removed. */
+/** Strip every code-with-quran entry from a settings object. Returns count removed. */
 function stripOurHooks(settings) {
   let removed = 0;
   const hooks = settings.hooks;

@@ -1,7 +1,7 @@
 {
-  "name": "waitwithayat",
-  "version": "0.1.0",
-  "description": "Open the Qur'an in your browser while a Claude Code session works — progressively, one ayah after the last.",
+  "name": "code-with-quran",
+  "version": "0.2.0",
+  "description": "Open the Qur'an in your browser while a Claude Code session works — progressively, one ayah after the last. Activates only with `claude --cwq`.",
   "keywords": [
     "quran",
     "alquran",
@@ -16,17 +16,17 @@
   "author": "bahni-m",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bahni-m/waitwithayat.git"
+    "url": "git+https://github.com/bahni-m/code-with-quran.git"
   },
-  "homepage": "https://github.com/bahni-m/waitwithayat#readme",
+  "homepage": "https://github.com/bahni-m/code-with-quran#readme",
   "bugs": {
-    "url": "https://github.com/bahni-m/waitwithayat/issues"
+    "url": "https://github.com/bahni-m/code-with-quran/issues"
   },
   "type": "commonjs",
   "main": "src/index.js",
   "bin": {
-    "waitwithayat": "bin/waitwithayat.js",
-    "wwy": "bin/waitwithayat.js"
+    "code-with-quran": "bin/code-with-quran.js",
+    "cwq": "bin/code-with-quran.js"
   },
   "files": [
     "bin/",
@@ -39,7 +39,7 @@
   "scripts": {
     "test": "node --test",
     "build-data": "node scripts/build-data.js",
-    "start": "node bin/waitwithayat.js"
+    "start": "node bin/code-with-quran.js"
   },
   "engines": {
     "node": ">=18"

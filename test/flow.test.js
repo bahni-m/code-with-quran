@@ -7,9 +7,9 @@ const os = require('os');
 const path = require('path');
 
 function tmpHome() {
-  // paths.js reads WAITWITHAYAT_HOME on every call, so a fresh dir is a fresh world
+  // paths.js reads CODE_WITH_QURAN_HOME on every call, so a fresh dir is a fresh world
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wwy-'));
-  process.env.WAITWITHAYAT_HOME = dir;
+  process.env.CODE_WITH_QURAN_HOME = dir;
   return dir;
 }
 
@@ -19,9 +19,9 @@ test.beforeEach(() => {
 
 test.afterEach(() => {
   try {
-    fs.rmSync(process.env.WAITWITHAYAT_HOME, { recursive: true, force: true });
+    fs.rmSync(process.env.CODE_WITH_QURAN_HOME, { recursive: true, force: true });
   } catch {}
-  delete process.env.WAITWITHAYAT_HOME;
+  delete process.env.CODE_WITH_QURAN_HOME;
 });
 
 test('open advances the pointer and is idempotent under cooldown', () => {
@@ -133,8 +133,8 @@ test('hook install / uninstall round-trip on a project settings file', () => {
     assert.ok(inst.backupPath && fs.existsSync(inst.backupPath));
 
     const after = hook.readSettings(inst.file);
-    assert.ok(after.hooks.UserPromptSubmit[0].hooks[0].command.includes('waitwithayat'));
-    assert.ok(after.hooks.Notification[0].hooks[0].command.includes('waitwithayat'));
+    assert.ok(after.hooks.UserPromptSubmit[0].hooks[0].command.includes('code-with-quran'));
+    assert.ok(after.hooks.Notification[0].hooks[0].command.includes('code-with-quran'));
     // pre-existing unrelated hook is untouched
     assert.equal(after.hooks.Stop[0].hooks[0].command, 'echo keep-me');
 

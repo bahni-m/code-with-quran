@@ -4,11 +4,13 @@ const os = require('os');
 const path = require('path');
 
 /**
- * Root directory for waitwithayat's own files.
- * Override with WAITWITHAYAT_HOME (used by tests).
+ * Root directory for code-with-quran's own files.
+ * Override with CODE_WITH_QURAN_HOME (used by tests).
  */
 function homeDir() {
-  return process.env.WAITWITHAYAT_HOME || path.join(os.homedir(), '.waitwithayat');
+  return (
+    process.env.CODE_WITH_QURAN_HOME || path.join(os.homedir(), '.code-with-quran')
+  );
 }
 
 function statePath() {
