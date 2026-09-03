@@ -5,8 +5,8 @@
 **Read the Qur'an while Claude Code works.**
 
 Keep a reader pane open next to your session. Start Claude with `claude --cwq`
-and every prompt you send advances the reader one ayah — resuming from wherever
-you last left off.
+and, as you work, the reader walks forward through the Qur'an an ayah at a time —
+resuming from wherever you last left off.
 
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)
@@ -19,7 +19,8 @@ you last left off.
 
 Claude starts working, the ayah in your other pane moves forward, and you read a
 few lines instead of watching a spinner. It stays in the terminal — no browser,
-no context switch. On a plain `claude` (without `--cwq`), nothing moves.
+no context switch. Without `--cwq` the hook stays silent, so the reader just
+holds on the current ayah until you move it yourself.
 
 The whole Uthmani text is bundled (Tanzil Project, ~1.3 MB), so the reader works
 offline and instantly.
@@ -55,14 +56,14 @@ Then, in day-to-day use:
 
 ```bash
 code-with-quran read     # in a second pane / tmux split — leave it open
-claude --cwq             # your session; each prompt advances the reader
+claude --cwq             # your session; the reader follows along as you work
 ```
 
 | Start command | Effect |
 | --- | --- |
 | `claude --cwq` | reader follows this session |
 | `claude --cwq-dgr` | same, plus `--dangerously-skip-permissions` |
-| `claude` | untouched — nothing advances |
+| `claude` | hook stays silent — the reader won't auto-advance |
 
 `--cwq` / `--cwq-dgr` must be the **first** argument.
 
@@ -71,9 +72,9 @@ claude --cwq             # your session; each prompt advances the reader
 ```mermaid
 flowchart LR
     A["claude --cwq"] -->|exports CODE_WITH_QURAN=1| B[Claude Code session]
-    B -->|every prompt| C[UserPromptSubmit hook]
+    B -->|on each prompt| C[UserPromptSubmit hook]
     C --> D{activated?}
-    D -->|yes| E[advance the pointer<br/>in ~/.code-with-quran/state.json]
+    D -->|yes| E[advance the pointer<br/>once per cooldown]
     D -->|no| F[do nothing]
     E -.->|file watch| G["code-with-quran read<br/>(your other pane)"]
 ```
@@ -85,8 +86,9 @@ Three moving parts:
    `command claude` (no recursion, no leak into your shell).
 2. **The hook** runs `code-with-quran open --quiet --session-only` on every
    `UserPromptSubmit`. `--session-only` makes it a no-op unless that variable is
-   set. It advances the pointer in `state.json` and, by default, does nothing
-   else (`surface = tui`).
+   set. When it does run it advances the pointer in `state.json` — at most once
+   per `cooldownMinutes` (default 3), so a burst of quick prompts doesn't run you
+   through a whole surah — and by default does nothing else (`surface = tui`).
 3. **The reader** (`code-with-quran read`) watches `state.json` and jumps to the
    new ayah whenever the pointer moves — from the hook, or from another pane.
 
@@ -140,7 +142,7 @@ Stored in `~/.code-with-quran/config.json`.
 | --- | --- | --- |
 | `enabled` | `true` | Master switch. `false` makes `open` a no-op even when activated. |
 | `ayatPerSession` | `1` | Ayat to advance per prompt. |
-| `cooldownMinutes` | `3` | Minimum gap between advances, so rapid prompts don't skip ahead. |
+| `cooldownMinutes` | `3` | Minimum gap between advances, so a burst of quick prompts doesn't run you ahead several ayat. |
 | `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
 | `surface` | `tui` | Where an advance surfaces: `tui`, `browser`, or `both`. |
 | `source` | `quran.com` | Browser reader site (when `surface` includes browser). |
