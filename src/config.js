@@ -15,6 +15,12 @@ const DEFAULTS = Object.freeze({
   loop: true,
   /** Where each advance surfaces: tui | browser | both. */
   surface: 'tui',
+  /**
+   * Auto-open a reader pane on `claude --cwq`: off | tmux | zellij | auto.
+   * Only works inside that multiplexer; `auto` picks whichever is running.
+   * Deduped — one reader is shared across sessions.
+   */
+  autopane: 'off',
   /** Reader website (when surface includes browser): quran.com | tanzil | quranwbw | alquran.cloud */
   source: 'quran.com',
   /** Explicit browser command, e.g. "firefox" or "google-chrome". Empty = OS default. */
@@ -29,6 +35,7 @@ const KEY_TYPES = {
   cooldownMinutes: 'number',
   loop: 'boolean',
   surface: 'string',
+  autopane: 'string',
   source: 'string',
   browser: 'string',
   browserArgs: 'string',
@@ -36,6 +43,7 @@ const KEY_TYPES = {
 
 const ENUMS = {
   surface: ['tui', 'browser', 'both'],
+  autopane: ['off', 'tmux', 'zellij', 'auto'],
   source: ['quran.com', 'tanzil', 'quranwbw', 'alquran.cloud'],
 };
 

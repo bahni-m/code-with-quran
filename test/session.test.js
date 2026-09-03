@@ -55,9 +55,13 @@ test('wrapper snippet: posix shells handle --cwq and --cwq-dgr', () => {
   for (const sh of ['bash', 'zsh']) {
     const snip = shell.wrapperSnippet(sh);
     assert.match(snip, /claude\(\) \{/);
-    assert.match(snip, /--cwq\)\s+shift; CODE_WITH_QURAN=1 command claude "\$@"/);
-    assert.match(snip, /--cwq-dgr\)\s+shift; CODE_WITH_QURAN=1 command claude --dangerously-skip-permissions "\$@"/);
-    assert.match(snip, /command claude "\$@" ;;/); // passthrough
+    assert.match(snip, /--cwq\)\s+shift;.*CODE_WITH_QURAN=1 command claude "\$@"/);
+    assert.match(
+      snip,
+      /--cwq-dgr\)\s+shift;.*CODE_WITH_QURAN=1 command claude --dangerously-skip-permissions "\$@"/
+    );
+    assert.match(snip, /\*\)\s+command claude "\$@" ;;/); // passthrough
+    assert.match(snip, /code-with-quran open-pane --auto/);
     assert.ok(snip.startsWith(shell.BEGIN));
     assert.ok(snip.trimEnd().endsWith(shell.END));
   }
@@ -66,8 +70,10 @@ test('wrapper snippet: posix shells handle --cwq and --cwq-dgr', () => {
 test('wrapper snippet: fish variant', () => {
   const snip = shell.wrapperSnippet('fish');
   assert.match(snip, /function claude/);
-  assert.match(snip, /case --cwq\n\s+set -lx CODE_WITH_QURAN 1/);
+  assert.match(snip, /case --cwq --cwq-dgr/);
+  assert.match(snip, /set -lx CODE_WITH_QURAN 1/);
   assert.match(snip, /--dangerously-skip-permissions \$argv\[2\.\.-1\]/);
+  assert.match(snip, /code-with-quran open-pane --auto/);
 });
 
 test('appendSnippet writes, refreshes without duplicating, and backs up', () => {

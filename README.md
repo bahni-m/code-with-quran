@@ -58,6 +58,17 @@ terminal tab — and leave it there:
 code-with-quran read
 ```
 
+**In tmux or zellij?** Skip that step and let `claude --cwq` open the pane for
+you:
+
+```bash
+code-with-quran config autopane auto
+```
+
+Now the first `claude --cwq` splits off a reader pane; later sessions reuse it
+(one reader, shared). Outside a multiplexer there's no pane to make, so open one
+yourself with `code-with-quran read`.
+
 Then start your Claude sessions through the wrapper:
 
 | Command | What happens |
@@ -96,6 +107,7 @@ Config lives in `~/.code-with-quran/config.json`; set values with
 | `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
 | `surface` | `tui` | Where an advance shows up: `tui`, `browser`, or `both`. |
+| `autopane` | `off` | Auto-open the reader pane on `claude --cwq`: `off`, `tmux`, `zellij`, or `auto`. |
 | `source` | `quran.com` | Browser reader site — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
 | `browser` | `""` | Explicit browser command. Empty = your OS default. |
 | `browserArgs` | `""` | Extra arguments for that command. |
@@ -134,8 +146,10 @@ Three moving parts:
 1. **The shell wrapper** replaces `claude` with a small function. `claude --cwq`
    sets `CODE_WITH_QURAN=1` for that one invocation and runs the real binary via
    `command claude` — no recursion, and the variable never leaks into your
-   shell. `shell-init` writes a `claude()` function for bash/zsh and a
-   `function claude` for fish; `--shell=…` overrides the `$SHELL` guess.
+   shell. It also runs `code-with-quran open-pane --auto`, which splits off a
+   reader pane when `autopane` says so (and is otherwise an instant no-op).
+   `shell-init` writes a `claude()` function for bash/zsh and a `function claude`
+   for fish; `--shell=…` overrides the `$SHELL` guess.
 2. **The hook** runs `code-with-quran open --quiet --session-only` on every
    `UserPromptSubmit`. `--session-only` makes it a no-op unless that variable is
    set. When it does run it advances the pointer in
@@ -153,6 +167,7 @@ Three moving parts:
 | Command | Description |
 | --- | --- |
 | `read` | Full-screen reader pane; follows the pointer |
+| `open-pane` | Split off a reader pane (tmux / zellij) |
 | `now` | Print the current ayah (Arabic + ref) |
 | `open` *(default)* | Advance the pointer (+ browser if `surface` includes it) |
 | `open --session-only` | No-op unless started via `claude --cwq` (the hook uses this) |
@@ -193,6 +208,7 @@ npm test          # node:test — no network, no browser, no rc files touched
 | `quran-text.js` | Uthmani text lookup |
 | `render.js` | Pure frame builder for the reader (width-aware Arabic wrapping) |
 | `tui.js` | The reader loop: raw input, state-file watch, alt-screen |
+| `pane.js` | Split a reader pane in tmux / zellij (deduped) |
 | `state.js` / `config.js` | JSON persistence under `~/.code-with-quran/` |
 | `session.js` | The `CODE_WITH_QURAN` activation gate |
 | `reader-registry.js` | Heartbeat file so `status` knows a reader is running |

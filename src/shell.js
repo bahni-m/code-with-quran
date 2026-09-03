@@ -26,12 +26,15 @@ function wrapperSnippet(shell) {
   return `${BEGIN}\n# Managed by \`code-with-quran shell-init\`. Edit above/below, not inside.\n${body}\n${END}\n`;
 }
 
+// `open-pane --auto` is a no-op unless `autopane` is configured; safe to always call.
+const PANE = 'command -v code-with-quran >/dev/null && code-with-quran open-pane --auto 2>/dev/null';
+
 function posixBody() {
   return [
     'claude() {',
     '  case "${1:-}" in',
-    `    --cwq)     shift; ${ENV_VAR}=1 command claude "$@" ;;`,
-    `    --cwq-dgr) shift; ${ENV_VAR}=1 command claude --dangerously-skip-permissions "$@" ;;`,
+    `    --cwq)     shift; ${PANE}; ${ENV_VAR}=1 command claude "$@" ;;`,
+    `    --cwq-dgr) shift; ${PANE}; ${ENV_VAR}=1 command claude --dangerously-skip-permissions "$@" ;;`,
     '    *)         command claude "$@" ;;',
     '  esac',
     '}',
@@ -42,12 +45,16 @@ function fishBody() {
   return [
     'function claude',
     '    switch "$argv[1]"',
-    '        case --cwq',
+    '        case --cwq --cwq-dgr',
+    '            if type -q code-with-quran',
+    '                code-with-quran open-pane --auto 2>/dev/null',
+    '            end',
     `            set -lx ${ENV_VAR} 1`,
-    '            command claude $argv[2..-1]',
-    '        case --cwq-dgr',
-    `            set -lx ${ENV_VAR} 1`,
-    '            command claude --dangerously-skip-permissions $argv[2..-1]',
+    '            if test "$argv[1]" = --cwq-dgr',
+    '                command claude --dangerously-skip-permissions $argv[2..-1]',
+    '            else',
+    '                command claude $argv[2..-1]',
+    '            end',
     "        case '*'",
     '            command claude $argv',
     '    end',

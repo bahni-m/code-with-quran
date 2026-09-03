@@ -5,6 +5,7 @@ const cwq = require('../src/index');
 const hook = require('../src/hook');
 const shell = require('../src/shell');
 const tui = require('../src/tui');
+const pane = require('../src/pane');
 const { KEY_TYPES, DEFAULTS, ENUMS } = require('../src/config');
 const { isSessionActive } = require('../src/session');
 
@@ -53,6 +54,7 @@ USAGE
 
 COMMANDS
   read                 Full-screen reader pane; follows the pointer as you work
+  open-pane            Split off a reader pane (needs tmux or zellij)
   now                  Print the current ayah (Arabic + ref) — for statuslines
   open                 Advance the pointer (+ open browser if surface=browser)
   peek                 Print the current ayah + URL without advancing
@@ -165,6 +167,18 @@ function main() {
 
     case 'read': {
       tui.run().then(() => process.exit(0));
+      return;
+    }
+
+    case 'open-pane': {
+      const res = pane.openPane({ auto: !!flags.auto, dryRun: !!flags['dry-run'] });
+      if (res.spawned) {
+        out(flags, `Opened a reader pane (${res.target}).`, res);
+      } else if (flags.auto) {
+        out(flags, null, res); // wrapper mode: never nag, just carry on
+      } else {
+        out(flags, `No reader pane: ${res.reason}.`, res);
+      }
       return;
     }
 
@@ -291,6 +305,9 @@ function main() {
             '',
             `Reload your shell:  source ${res.file}`,
             `Then run:  claude --cwq   (or  claude --cwq-dgr)`,
+            '',
+            `In tmux/zellij? 'code-with-quran config autopane auto' opens the`,
+            `reader pane for you on 'claude --cwq'.`,
           ]
             .filter((l) => l !== null)
             .join('\n'),

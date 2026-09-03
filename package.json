@@ -1,6 +1,6 @@
 {
   "name": "code-with-quran",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Read the Qur'an in a TUI while a Claude Code session works — each prompt advances you one ayah. Activates with `claude --cwq`.",
   "keywords": [
     "quran",
