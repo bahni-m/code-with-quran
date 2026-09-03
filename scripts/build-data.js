@@ -1,0 +1,148 @@
+#!/usr/bin/env node
+'use strict';
+
+/*
+ * Builds data/surahs.json from a compact table.
+ * Ayah counts follow the standard Hafs / Kufan counting (total 6236).
+ * Run: node scripts/build-data.js
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// number | transliterated name | english meaning | arabic name | ayah count | revelation place
+const TABLE = [
+  [1, 'Al-Fatihah', 'The Opening', 'الفاتحة', 7, 'Meccan'],
+  [2, 'Al-Baqarah', 'The Cow', 'البقرة', 286, 'Medinan'],
+  [3, "Ali 'Imran", 'Family of Imran', 'آل عمران', 200, 'Medinan'],
+  [4, 'An-Nisa', 'The Women', 'النساء', 176, 'Medinan'],
+  [5, "Al-Ma'idah", 'The Table Spread', 'المائدة', 120, 'Medinan'],
+  [6, "Al-An'am", 'The Cattle', 'الأنعام', 165, 'Meccan'],
+  [7, "Al-A'raf", 'The Heights', 'الأعراف', 206, 'Meccan'],
+  [8, 'Al-Anfal', 'The Spoils of War', 'الأنفال', 75, 'Medinan'],
+  [9, 'At-Tawbah', 'The Repentance', 'التوبة', 129, 'Medinan'],
+  [10, 'Yunus', 'Jonah', 'يونس', 109, 'Meccan'],
+  [11, 'Hud', 'Hud', 'هود', 123, 'Meccan'],
+  [12, 'Yusuf', 'Joseph', 'يوسف', 111, 'Meccan'],
+  [13, "Ar-Ra'd", 'The Thunder', 'الرعد', 43, 'Medinan'],
+  [14, 'Ibrahim', 'Abraham', 'إبراهيم', 52, 'Meccan'],
+  [15, 'Al-Hijr', 'The Rocky Tract', 'الحجر', 99, 'Meccan'],
+  [16, 'An-Nahl', 'The Bee', 'النحل', 128, 'Meccan'],
+  [17, 'Al-Isra', 'The Night Journey', 'الإسراء', 111, 'Meccan'],
+  [18, 'Al-Kahf', 'The Cave', 'الكهف', 110, 'Meccan'],
+  [19, 'Maryam', 'Mary', 'مريم', 98, 'Meccan'],
+  [20, 'Ta-Ha', 'Ta-Ha', 'طه', 135, 'Meccan'],
+  [21, 'Al-Anbya', 'The Prophets', 'الأنبياء', 112, 'Meccan'],
+  [22, 'Al-Hajj', 'The Pilgrimage', 'الحج', 78, 'Medinan'],
+  [23, "Al-Mu'minun", 'The Believers', 'المؤمنون', 118, 'Meccan'],
+  [24, 'An-Nur', 'The Light', 'النور', 64, 'Medinan'],
+  [25, 'Al-Furqan', 'The Criterion', 'الفرقان', 77, 'Meccan'],
+  [26, "Ash-Shu'ara", 'The Poets', 'الشعراء', 227, 'Meccan'],
+  [27, 'An-Naml', 'The Ant', 'النمل', 93, 'Meccan'],
+  [28, 'Al-Qasas', 'The Stories', 'القصص', 88, 'Meccan'],
+  [29, "Al-'Ankabut", 'The Spider', 'العنكبوت', 69, 'Meccan'],
+  [30, 'Ar-Rum', 'The Romans', 'الروم', 60, 'Meccan'],
+  [31, 'Luqman', 'Luqman', 'لقمان', 34, 'Meccan'],
+  [32, 'As-Sajdah', 'The Prostration', 'السجدة', 30, 'Meccan'],
+  [33, 'Al-Ahzab', 'The Combined Forces', 'الأحزاب', 73, 'Medinan'],
+  [34, 'Saba', 'Sheba', 'سبأ', 54, 'Meccan'],
+  [35, 'Fatir', 'Originator', 'فاطر', 45, 'Meccan'],
+  [36, 'Ya-Sin', 'Ya Sin', 'يس', 83, 'Meccan'],
+  [37, 'As-Saffat', 'Those Who Set the Ranks', 'الصافات', 182, 'Meccan'],
+  [38, 'Sad', 'The Letter Sad', 'ص', 88, 'Meccan'],
+  [39, 'Az-Zumar', 'The Troops', 'الزمر', 75, 'Meccan'],
+  [40, 'Ghafir', 'The Forgiver', 'غافر', 85, 'Meccan'],
+  [41, 'Fussilat', 'Explained in Detail', 'فصلت', 54, 'Meccan'],
+  [42, 'Ash-Shura', 'The Consultation', 'الشورى', 53, 'Meccan'],
+  [43, 'Az-Zukhruf', 'The Ornaments of Gold', 'الزخرف', 89, 'Meccan'],
+  [44, 'Ad-Dukhan', 'The Smoke', 'الدخان', 59, 'Meccan'],
+  [45, 'Al-Jathiyah', 'The Crouching', 'الجاثية', 37, 'Meccan'],
+  [46, 'Al-Ahqaf', 'The Wind-Curved Sandhills', 'الأحقاف', 35, 'Meccan'],
+  [47, 'Muhammad', 'Muhammad', 'محمد', 38, 'Medinan'],
+  [48, 'Al-Fath', 'The Victory', 'الفتح', 29, 'Medinan'],
+  [49, 'Al-Hujurat', 'The Rooms', 'الحجرات', 18, 'Medinan'],
+  [50, 'Qaf', 'The Letter Qaf', 'ق', 45, 'Meccan'],
+  [51, 'Adh-Dhariyat', 'The Winnowing Winds', 'الذاريات', 60, 'Meccan'],
+  [52, 'At-Tur', 'The Mount', 'الطور', 49, 'Meccan'],
+  [53, 'An-Najm', 'The Star', 'النجم', 62, 'Meccan'],
+  [54, 'Al-Qamar', 'The Moon', 'القمر', 55, 'Meccan'],
+  [55, 'Ar-Rahman', 'The Beneficent', 'الرحمن', 78, 'Medinan'],
+  [56, "Al-Waqi'ah", 'The Inevitable', 'الواقعة', 96, 'Meccan'],
+  [57, 'Al-Hadid', 'The Iron', 'الحديد', 29, 'Medinan'],
+  [58, 'Al-Mujadila', 'The Pleading Woman', 'المجادلة', 22, 'Medinan'],
+  [59, 'Al-Hashr', 'The Exile', 'الحشر', 24, 'Medinan'],
+  [60, 'Al-Mumtahanah', 'She That Is to Be Examined', 'الممتحنة', 13, 'Medinan'],
+  [61, 'As-Saff', 'The Ranks', 'الصف', 14, 'Medinan'],
+  [62, "Al-Jumu'ah", 'The Congregation, Friday', 'الجمعة', 11, 'Medinan'],
+  [63, 'Al-Munafiqun', 'The Hypocrites', 'المنافقون', 11, 'Medinan'],
+  [64, 'At-Taghabun', 'The Mutual Disillusion', 'التغابن', 18, 'Medinan'],
+  [65, 'At-Talaq', 'The Divorce', 'الطلاق', 12, 'Medinan'],
+  [66, 'At-Tahrim', 'The Prohibition', 'التحريم', 12, 'Medinan'],
+  [67, 'Al-Mulk', 'The Sovereignty', 'الملك', 30, 'Meccan'],
+  [68, 'Al-Qalam', 'The Pen', 'القلم', 52, 'Meccan'],
+  [69, 'Al-Haqqah', 'The Reality', 'الحاقة', 52, 'Meccan'],
+  [70, "Al-Ma'arij", 'The Ascending Stairways', 'المعارج', 44, 'Meccan'],
+  [71, 'Nuh', 'Noah', 'نوح', 28, 'Meccan'],
+  [72, 'Al-Jinn', 'The Jinn', 'الجن', 28, 'Meccan'],
+  [73, 'Al-Muzzammil', 'The Enshrouded One', 'المزمل', 20, 'Meccan'],
+  [74, 'Al-Muddaththir', 'The Cloaked One', 'المدثر', 56, 'Meccan'],
+  [75, 'Al-Qiyamah', 'The Resurrection', 'القيامة', 40, 'Meccan'],
+  [76, 'Al-Insan', 'The Man', 'الإنسان', 31, 'Medinan'],
+  [77, 'Al-Mursalat', 'The Emissaries', 'المرسلات', 50, 'Meccan'],
+  [78, 'An-Naba', 'The Tidings', 'النبأ', 40, 'Meccan'],
+  [79, "An-Nazi'at", 'Those Who Drag Forth', 'النازعات', 46, 'Meccan'],
+  [80, 'Abasa', 'He Frowned', 'عبس', 42, 'Meccan'],
+  [81, 'At-Takwir', 'The Overthrowing', 'التكوير', 29, 'Meccan'],
+  [82, 'Al-Infitar', 'The Cleaving', 'الانفطار', 19, 'Meccan'],
+  [83, 'Al-Mutaffifin', 'The Defrauding', 'المطففين', 36, 'Meccan'],
+  [84, 'Al-Inshiqaq', 'The Sundering', 'الانشقاق', 25, 'Meccan'],
+  [85, 'Al-Buruj', 'The Mansions of the Stars', 'البروج', 22, 'Meccan'],
+  [86, 'At-Tariq', 'The Nightcomer', 'الطارق', 17, 'Meccan'],
+  [87, "Al-A'la", 'The Most High', 'الأعلى', 19, 'Meccan'],
+  [88, 'Al-Ghashiyah', 'The Overwhelming', 'الغاشية', 26, 'Meccan'],
+  [89, 'Al-Fajr', 'The Dawn', 'الفجر', 30, 'Meccan'],
+  [90, 'Al-Balad', 'The City', 'البلد', 20, 'Meccan'],
+  [91, 'Ash-Shams', 'The Sun', 'الشمس', 15, 'Meccan'],
+  [92, 'Al-Layl', 'The Night', 'الليل', 21, 'Meccan'],
+  [93, 'Ad-Duha', 'The Morning Hours', 'الضحى', 11, 'Meccan'],
+  [94, 'Ash-Sharh', 'The Relief', 'الشرح', 8, 'Meccan'],
+  [95, 'At-Tin', 'The Fig', 'التين', 8, 'Meccan'],
+  [96, "Al-'Alaq", 'The Clot', 'العلق', 19, 'Meccan'],
+  [97, 'Al-Qadr', 'The Power', 'القدر', 5, 'Meccan'],
+  [98, 'Al-Bayyinah', 'The Clear Proof', 'البينة', 8, 'Medinan'],
+  [99, 'Az-Zalzalah', 'The Earthquake', 'الزلزلة', 8, 'Medinan'],
+  [100, "Al-'Adiyat", 'The Courser', 'العاديات', 11, 'Meccan'],
+  [101, "Al-Qari'ah", 'The Calamity', 'القارعة', 11, 'Meccan'],
+  [102, 'At-Takathur', 'The Rivalry in World Increase', 'التكاثر', 8, 'Meccan'],
+  [103, "Al-'Asr", 'The Declining Day', 'العصر', 3, 'Meccan'],
+  [104, 'Al-Humazah', 'The Traducer', 'الهمزة', 9, 'Meccan'],
+  [105, 'Al-Fil', 'The Elephant', 'الفيل', 5, 'Meccan'],
+  [106, 'Quraysh', 'Quraysh', 'قريش', 4, 'Meccan'],
+  [107, "Al-Ma'un", 'The Small Kindnesses', 'الماعون', 7, 'Meccan'],
+  [108, 'Al-Kawthar', 'The Abundance', 'الكوثر', 3, 'Meccan'],
+  [109, 'Al-Kafirun', 'The Disbelievers', 'الكافرون', 6, 'Meccan'],
+  [110, 'An-Nasr', 'The Divine Support', 'النصر', 3, 'Medinan'],
+  [111, 'Al-Masad', 'The Palm Fiber', 'المسد', 5, 'Meccan'],
+  [112, 'Al-Ikhlas', 'The Sincerity', 'الإخلاص', 4, 'Meccan'],
+  [113, 'Al-Falaq', 'The Daybreak', 'الفلق', 5, 'Meccan'],
+  [114, 'An-Nas', 'Mankind', 'الناس', 6, 'Meccan'],
+];
+
+const surahs = TABLE.map(([number, name, meaning, arabic, ayahs, place]) => ({
+  number,
+  name,
+  meaning,
+  arabic,
+  ayahs,
+  revelationPlace: place,
+}));
+
+const total = surahs.reduce((sum, s) => sum + s.ayahs, 0);
+if (total !== 6236) {
+  console.error(`Ayah total mismatch: got ${total}, expected 6236`);
+  process.exit(1);
+}
+
+const outPath = path.join(__dirname, '..', 'data', 'surahs.json');
+fs.writeFileSync(outPath, JSON.stringify(surahs, null, 2) + '\n');
+console.log(`Wrote ${surahs.length} surahs (${total} ayat) to ${outPath}`);

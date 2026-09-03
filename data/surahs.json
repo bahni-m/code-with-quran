@@ -1,0 +1,914 @@
+[
+  {
+    "number": 1,
+    "name": "Al-Fatihah",
+    "meaning": "The Opening",
+    "arabic": "الفاتحة",
+    "ayahs": 7,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 2,
+    "name": "Al-Baqarah",
+    "meaning": "The Cow",
+    "arabic": "البقرة",
+    "ayahs": 286,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 3,
+    "name": "Ali 'Imran",
+    "meaning": "Family of Imran",
+    "arabic": "آل عمران",
+    "ayahs": 200,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 4,
+    "name": "An-Nisa",
+    "meaning": "The Women",
+    "arabic": "النساء",
+    "ayahs": 176,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 5,
+    "name": "Al-Ma'idah",
+    "meaning": "The Table Spread",
+    "arabic": "المائدة",
+    "ayahs": 120,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 6,
+    "name": "Al-An'am",
+    "meaning": "The Cattle",
+    "arabic": "الأنعام",
+    "ayahs": 165,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 7,
+    "name": "Al-A'raf",
+    "meaning": "The Heights",
+    "arabic": "الأعراف",
+    "ayahs": 206,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 8,
+    "name": "Al-Anfal",
+    "meaning": "The Spoils of War",
+    "arabic": "الأنفال",
+    "ayahs": 75,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 9,
+    "name": "At-Tawbah",
+    "meaning": "The Repentance",
+    "arabic": "التوبة",
+    "ayahs": 129,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 10,
+    "name": "Yunus",
+    "meaning": "Jonah",
+    "arabic": "يونس",
+    "ayahs": 109,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 11,
+    "name": "Hud",
+    "meaning": "Hud",
+    "arabic": "هود",
+    "ayahs": 123,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 12,
+    "name": "Yusuf",
+    "meaning": "Joseph",
+    "arabic": "يوسف",
+    "ayahs": 111,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 13,
+    "name": "Ar-Ra'd",
+    "meaning": "The Thunder",
+    "arabic": "الرعد",
+    "ayahs": 43,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 14,
+    "name": "Ibrahim",
+    "meaning": "Abraham",
+    "arabic": "إبراهيم",
+    "ayahs": 52,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 15,
+    "name": "Al-Hijr",
+    "meaning": "The Rocky Tract",
+    "arabic": "الحجر",
+    "ayahs": 99,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 16,
+    "name": "An-Nahl",
+    "meaning": "The Bee",
+    "arabic": "النحل",
+    "ayahs": 128,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 17,
+    "name": "Al-Isra",
+    "meaning": "The Night Journey",
+    "arabic": "الإسراء",
+    "ayahs": 111,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 18,
+    "name": "Al-Kahf",
+    "meaning": "The Cave",
+    "arabic": "الكهف",
+    "ayahs": 110,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 19,
+    "name": "Maryam",
+    "meaning": "Mary",
+    "arabic": "مريم",
+    "ayahs": 98,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 20,
+    "name": "Ta-Ha",
+    "meaning": "Ta-Ha",
+    "arabic": "طه",
+    "ayahs": 135,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 21,
+    "name": "Al-Anbya",
+    "meaning": "The Prophets",
+    "arabic": "الأنبياء",
+    "ayahs": 112,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 22,
+    "name": "Al-Hajj",
+    "meaning": "The Pilgrimage",
+    "arabic": "الحج",
+    "ayahs": 78,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 23,
+    "name": "Al-Mu'minun",
+    "meaning": "The Believers",
+    "arabic": "المؤمنون",
+    "ayahs": 118,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 24,
+    "name": "An-Nur",
+    "meaning": "The Light",
+    "arabic": "النور",
+    "ayahs": 64,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 25,
+    "name": "Al-Furqan",
+    "meaning": "The Criterion",
+    "arabic": "الفرقان",
+    "ayahs": 77,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 26,
+    "name": "Ash-Shu'ara",
+    "meaning": "The Poets",
+    "arabic": "الشعراء",
+    "ayahs": 227,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 27,
+    "name": "An-Naml",
+    "meaning": "The Ant",
+    "arabic": "النمل",
+    "ayahs": 93,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 28,
+    "name": "Al-Qasas",
+    "meaning": "The Stories",
+    "arabic": "القصص",
+    "ayahs": 88,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 29,
+    "name": "Al-'Ankabut",
+    "meaning": "The Spider",
+    "arabic": "العنكبوت",
+    "ayahs": 69,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 30,
+    "name": "Ar-Rum",
+    "meaning": "The Romans",
+    "arabic": "الروم",
+    "ayahs": 60,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 31,
+    "name": "Luqman",
+    "meaning": "Luqman",
+    "arabic": "لقمان",
+    "ayahs": 34,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 32,
+    "name": "As-Sajdah",
+    "meaning": "The Prostration",
+    "arabic": "السجدة",
+    "ayahs": 30,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 33,
+    "name": "Al-Ahzab",
+    "meaning": "The Combined Forces",
+    "arabic": "الأحزاب",
+    "ayahs": 73,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 34,
+    "name": "Saba",
+    "meaning": "Sheba",
+    "arabic": "سبأ",
+    "ayahs": 54,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 35,
+    "name": "Fatir",
+    "meaning": "Originator",
+    "arabic": "فاطر",
+    "ayahs": 45,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 36,
+    "name": "Ya-Sin",
+    "meaning": "Ya Sin",
+    "arabic": "يس",
+    "ayahs": 83,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 37,
+    "name": "As-Saffat",
+    "meaning": "Those Who Set the Ranks",
+    "arabic": "الصافات",
+    "ayahs": 182,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 38,
+    "name": "Sad",
+    "meaning": "The Letter Sad",
+    "arabic": "ص",
+    "ayahs": 88,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 39,
+    "name": "Az-Zumar",
+    "meaning": "The Troops",
+    "arabic": "الزمر",
+    "ayahs": 75,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 40,
+    "name": "Ghafir",
+    "meaning": "The Forgiver",
+    "arabic": "غافر",
+    "ayahs": 85,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 41,
+    "name": "Fussilat",
+    "meaning": "Explained in Detail",
+    "arabic": "فصلت",
+    "ayahs": 54,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 42,
+    "name": "Ash-Shura",
+    "meaning": "The Consultation",
+    "arabic": "الشورى",
+    "ayahs": 53,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 43,
+    "name": "Az-Zukhruf",
+    "meaning": "The Ornaments of Gold",
+    "arabic": "الزخرف",
+    "ayahs": 89,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 44,
+    "name": "Ad-Dukhan",
+    "meaning": "The Smoke",
+    "arabic": "الدخان",
+    "ayahs": 59,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 45,
+    "name": "Al-Jathiyah",
+    "meaning": "The Crouching",
+    "arabic": "الجاثية",
+    "ayahs": 37,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 46,
+    "name": "Al-Ahqaf",
+    "meaning": "The Wind-Curved Sandhills",
+    "arabic": "الأحقاف",
+    "ayahs": 35,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 47,
+    "name": "Muhammad",
+    "meaning": "Muhammad",
+    "arabic": "محمد",
+    "ayahs": 38,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 48,
+    "name": "Al-Fath",
+    "meaning": "The Victory",
+    "arabic": "الفتح",
+    "ayahs": 29,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 49,
+    "name": "Al-Hujurat",
+    "meaning": "The Rooms",
+    "arabic": "الحجرات",
+    "ayahs": 18,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 50,
+    "name": "Qaf",
+    "meaning": "The Letter Qaf",
+    "arabic": "ق",
+    "ayahs": 45,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 51,
+    "name": "Adh-Dhariyat",
+    "meaning": "The Winnowing Winds",
+    "arabic": "الذاريات",
+    "ayahs": 60,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 52,
+    "name": "At-Tur",
+    "meaning": "The Mount",
+    "arabic": "الطور",
+    "ayahs": 49,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 53,
+    "name": "An-Najm",
+    "meaning": "The Star",
+    "arabic": "النجم",
+    "ayahs": 62,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 54,
+    "name": "Al-Qamar",
+    "meaning": "The Moon",
+    "arabic": "القمر",
+    "ayahs": 55,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 55,
+    "name": "Ar-Rahman",
+    "meaning": "The Beneficent",
+    "arabic": "الرحمن",
+    "ayahs": 78,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 56,
+    "name": "Al-Waqi'ah",
+    "meaning": "The Inevitable",
+    "arabic": "الواقعة",
+    "ayahs": 96,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 57,
+    "name": "Al-Hadid",
+    "meaning": "The Iron",
+    "arabic": "الحديد",
+    "ayahs": 29,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 58,
+    "name": "Al-Mujadila",
+    "meaning": "The Pleading Woman",
+    "arabic": "المجادلة",
+    "ayahs": 22,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 59,
+    "name": "Al-Hashr",
+    "meaning": "The Exile",
+    "arabic": "الحشر",
+    "ayahs": 24,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 60,
+    "name": "Al-Mumtahanah",
+    "meaning": "She That Is to Be Examined",
+    "arabic": "الممتحنة",
+    "ayahs": 13,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 61,
+    "name": "As-Saff",
+    "meaning": "The Ranks",
+    "arabic": "الصف",
+    "ayahs": 14,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 62,
+    "name": "Al-Jumu'ah",
+    "meaning": "The Congregation, Friday",
+    "arabic": "الجمعة",
+    "ayahs": 11,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 63,
+    "name": "Al-Munafiqun",
+    "meaning": "The Hypocrites",
+    "arabic": "المنافقون",
+    "ayahs": 11,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 64,
+    "name": "At-Taghabun",
+    "meaning": "The Mutual Disillusion",
+    "arabic": "التغابن",
+    "ayahs": 18,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 65,
+    "name": "At-Talaq",
+    "meaning": "The Divorce",
+    "arabic": "الطلاق",
+    "ayahs": 12,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 66,
+    "name": "At-Tahrim",
+    "meaning": "The Prohibition",
+    "arabic": "التحريم",
+    "ayahs": 12,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 67,
+    "name": "Al-Mulk",
+    "meaning": "The Sovereignty",
+    "arabic": "الملك",
+    "ayahs": 30,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 68,
+    "name": "Al-Qalam",
+    "meaning": "The Pen",
+    "arabic": "القلم",
+    "ayahs": 52,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 69,
+    "name": "Al-Haqqah",
+    "meaning": "The Reality",
+    "arabic": "الحاقة",
+    "ayahs": 52,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 70,
+    "name": "Al-Ma'arij",
+    "meaning": "The Ascending Stairways",
+    "arabic": "المعارج",
+    "ayahs": 44,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 71,
+    "name": "Nuh",
+    "meaning": "Noah",
+    "arabic": "نوح",
+    "ayahs": 28,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 72,
+    "name": "Al-Jinn",
+    "meaning": "The Jinn",
+    "arabic": "الجن",
+    "ayahs": 28,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 73,
+    "name": "Al-Muzzammil",
+    "meaning": "The Enshrouded One",
+    "arabic": "المزمل",
+    "ayahs": 20,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 74,
+    "name": "Al-Muddaththir",
+    "meaning": "The Cloaked One",
+    "arabic": "المدثر",
+    "ayahs": 56,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 75,
+    "name": "Al-Qiyamah",
+    "meaning": "The Resurrection",
+    "arabic": "القيامة",
+    "ayahs": 40,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 76,
+    "name": "Al-Insan",
+    "meaning": "The Man",
+    "arabic": "الإنسان",
+    "ayahs": 31,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 77,
+    "name": "Al-Mursalat",
+    "meaning": "The Emissaries",
+    "arabic": "المرسلات",
+    "ayahs": 50,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 78,
+    "name": "An-Naba",
+    "meaning": "The Tidings",
+    "arabic": "النبأ",
+    "ayahs": 40,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 79,
+    "name": "An-Nazi'at",
+    "meaning": "Those Who Drag Forth",
+    "arabic": "النازعات",
+    "ayahs": 46,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 80,
+    "name": "Abasa",
+    "meaning": "He Frowned",
+    "arabic": "عبس",
+    "ayahs": 42,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 81,
+    "name": "At-Takwir",
+    "meaning": "The Overthrowing",
+    "arabic": "التكوير",
+    "ayahs": 29,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 82,
+    "name": "Al-Infitar",
+    "meaning": "The Cleaving",
+    "arabic": "الانفطار",
+    "ayahs": 19,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 83,
+    "name": "Al-Mutaffifin",
+    "meaning": "The Defrauding",
+    "arabic": "المطففين",
+    "ayahs": 36,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 84,
+    "name": "Al-Inshiqaq",
+    "meaning": "The Sundering",
+    "arabic": "الانشقاق",
+    "ayahs": 25,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 85,
+    "name": "Al-Buruj",
+    "meaning": "The Mansions of the Stars",
+    "arabic": "البروج",
+    "ayahs": 22,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 86,
+    "name": "At-Tariq",
+    "meaning": "The Nightcomer",
+    "arabic": "الطارق",
+    "ayahs": 17,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 87,
+    "name": "Al-A'la",
+    "meaning": "The Most High",
+    "arabic": "الأعلى",
+    "ayahs": 19,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 88,
+    "name": "Al-Ghashiyah",
+    "meaning": "The Overwhelming",
+    "arabic": "الغاشية",
+    "ayahs": 26,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 89,
+    "name": "Al-Fajr",
+    "meaning": "The Dawn",
+    "arabic": "الفجر",
+    "ayahs": 30,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 90,
+    "name": "Al-Balad",
+    "meaning": "The City",
+    "arabic": "البلد",
+    "ayahs": 20,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 91,
+    "name": "Ash-Shams",
+    "meaning": "The Sun",
+    "arabic": "الشمس",
+    "ayahs": 15,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 92,
+    "name": "Al-Layl",
+    "meaning": "The Night",
+    "arabic": "الليل",
+    "ayahs": 21,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 93,
+    "name": "Ad-Duha",
+    "meaning": "The Morning Hours",
+    "arabic": "الضحى",
+    "ayahs": 11,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 94,
+    "name": "Ash-Sharh",
+    "meaning": "The Relief",
+    "arabic": "الشرح",
+    "ayahs": 8,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 95,
+    "name": "At-Tin",
+    "meaning": "The Fig",
+    "arabic": "التين",
+    "ayahs": 8,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 96,
+    "name": "Al-'Alaq",
+    "meaning": "The Clot",
+    "arabic": "العلق",
+    "ayahs": 19,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 97,
+    "name": "Al-Qadr",
+    "meaning": "The Power",
+    "arabic": "القدر",
+    "ayahs": 5,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 98,
+    "name": "Al-Bayyinah",
+    "meaning": "The Clear Proof",
+    "arabic": "البينة",
+    "ayahs": 8,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 99,
+    "name": "Az-Zalzalah",
+    "meaning": "The Earthquake",
+    "arabic": "الزلزلة",
+    "ayahs": 8,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 100,
+    "name": "Al-'Adiyat",
+    "meaning": "The Courser",
+    "arabic": "العاديات",
+    "ayahs": 11,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 101,
+    "name": "Al-Qari'ah",
+    "meaning": "The Calamity",
+    "arabic": "القارعة",
+    "ayahs": 11,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 102,
+    "name": "At-Takathur",
+    "meaning": "The Rivalry in World Increase",
+    "arabic": "التكاثر",
+    "ayahs": 8,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 103,
+    "name": "Al-'Asr",
+    "meaning": "The Declining Day",
+    "arabic": "العصر",
+    "ayahs": 3,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 104,
+    "name": "Al-Humazah",
+    "meaning": "The Traducer",
+    "arabic": "الهمزة",
+    "ayahs": 9,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 105,
+    "name": "Al-Fil",
+    "meaning": "The Elephant",
+    "arabic": "الفيل",
+    "ayahs": 5,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 106,
+    "name": "Quraysh",
+    "meaning": "Quraysh",
+    "arabic": "قريش",
+    "ayahs": 4,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 107,
+    "name": "Al-Ma'un",
+    "meaning": "The Small Kindnesses",
+    "arabic": "الماعون",
+    "ayahs": 7,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 108,
+    "name": "Al-Kawthar",
+    "meaning": "The Abundance",
+    "arabic": "الكوثر",
+    "ayahs": 3,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 109,
+    "name": "Al-Kafirun",
+    "meaning": "The Disbelievers",
+    "arabic": "الكافرون",
+    "ayahs": 6,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 110,
+    "name": "An-Nasr",
+    "meaning": "The Divine Support",
+    "arabic": "النصر",
+    "ayahs": 3,
+    "revelationPlace": "Medinan"
+  },
+  {
+    "number": 111,
+    "name": "Al-Masad",
+    "meaning": "The Palm Fiber",
+    "arabic": "المسد",
+    "ayahs": 5,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 112,
+    "name": "Al-Ikhlas",
+    "meaning": "The Sincerity",
+    "arabic": "الإخلاص",
+    "ayahs": 4,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 113,
+    "name": "Al-Falaq",
+    "meaning": "The Daybreak",
+    "arabic": "الفلق",
+    "ayahs": 5,
+    "revelationPlace": "Meccan"
+  },
+  {
+    "number": 114,
+    "name": "An-Nas",
+    "meaning": "Mankind",
+    "arabic": "الناس",
+    "ayahs": 6,
+    "revelationPlace": "Meccan"
+  }
+]
