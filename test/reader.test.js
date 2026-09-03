@@ -84,6 +84,24 @@ test('frame produces exactly `rows` lines, none absurdly wide', () => {
   assert.match(joined, /۝٢٥٥/); // current ayah marker
 });
 
+test('frame direction: logical emits raw text, visual reshapes it', () => {
+  const opts = { cols: 100, rows: 24, position: { surah: 112, ayah: 1 } };
+  const word = qt.ayahText(112, 1).split(' ')[0]; // first word, raw
+  const logical = render.frame({ ...opts, direction: 'logical' }).join('\n');
+  const visual = render.frame({ ...opts, direction: 'visual' }).join('\n');
+
+  assert.ok(logical.includes(word), 'logical keeps the source word');
+  assert.ok(!visual.includes(word), 'visual reshapes away the source form');
+  assert.ok(/[ﹰ-ﻼ]/.test(visual), 'visual uses Arabic presentation forms');
+  assert.ok(visual.includes('۝١'), 'ayah marker survives reshaping');
+});
+
+test('frame defaults to visual direction', () => {
+  const word = qt.ayahText(112, 1).split(' ')[0];
+  const dflt = render.frame({ cols: 100, rows: 24, position: { surah: 112, ayah: 1 } }).join('\n');
+  assert.ok(!dflt.includes(word));
+});
+
 test('frame handles tiny terminals and surah boundaries', () => {
   assert.doesNotThrow(() => render.frame({ cols: 20, rows: 8, position: { surah: 1, ayah: 1 } }));
   assert.doesNotThrow(() => render.frame({ cols: 40, rows: 12, position: { surah: 114, ayah: 6 } }));

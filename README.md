@@ -102,6 +102,7 @@ Config lives in `~/.code-with-quran/config.json`; set values with
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
 | `surface` | `tui` | Where an advance shows up: `tui`, `browser`, or `both`. |
 | `autopane` | `auto` | Auto-open the reader pane on `claude --cwq`: `auto` splits a pane when you're in tmux or zellij, `off` never does, `tmux`/`zellij` pin it to one. |
+| `direction` | `visual` | How Arabic is written to the terminal. `visual` reshapes and reverses each line so it reads right-to-left everywhere — needed under tmux/zellij and in terminals with no bidi (xterm, Alacritty, kitty). Switch to `logical` only if your terminal does its own bidi (recent Konsole / GNOME Terminal) and the text now looks reversed. |
 | `source` | `quran.com` | Browser reader site — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
 | `browser` | `""` | Explicit browser command. Empty = your OS default. |
 | `browserArgs` | `""` | Extra arguments for that command. |
@@ -201,6 +202,7 @@ npm test          # node:test — no network, no browser, no rc files touched
 | --- | --- |
 | `quran.js` | Surah metadata, progression maths (advance/rewind, reference parsing, URLs) |
 | `quran-text.js` | Uthmani text lookup |
+| `arabic.js` | Zero-dep Arabic shaping + visual reordering for terminals with no bidi |
 | `render.js` | Pure frame builder for the reader (width-aware Arabic wrapping) |
 | `tui.js` | The reader loop: raw input, state-file watch, alt-screen |
 | `pane.js` | Split a reader pane in tmux / zellij (deduped) |

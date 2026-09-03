@@ -196,7 +196,7 @@ function main() {
       if (flags.json) {
         out(flags, null, n);
       } else {
-        process.stdout.write(`${n.arabic}\n${n.label}\n`);
+        process.stdout.write(`${n.arabicVisual}\n${n.label}\n`);
       }
       return;
     }

@@ -7,6 +7,7 @@ const { openUrl } = require('./open');
 const { isSessionActive } = require('./session');
 const readerRegistry = require('./reader-registry');
 const qt = require('./quran-text');
+const { toVisual } = require('./arabic');
 
 /**
  * The heart of the tool: open the current ayah, then advance the pointer.
@@ -110,6 +111,10 @@ function nowAyah() {
     label: quran.label(pos),
     ref: `${pos.surah}:${pos.ayah}`,
     arabic: qt.ayahText(pos.surah, pos.ayah),
+    arabicVisual:
+      config.direction === 'logical'
+        ? qt.ayahText(pos.surah, pos.ayah)
+        : toVisual(qt.ayahText(pos.surah, pos.ayah)),
     surah: quran.surah(pos.surah),
     url: quran.buildUrl(pos, config.source),
     progress: {

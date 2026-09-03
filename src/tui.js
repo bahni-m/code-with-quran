@@ -31,6 +31,7 @@ function run() {
           rows: out.rows || 24,
           position: { surah: st.surah, ayah: st.ayah },
           following: true,
+          direction: loadConfig().direction,
         })
         .join('\n') + '\n'
     );
@@ -66,6 +67,7 @@ function run() {
         position: pos,
         following,
         paused: cfg.enabled === false,
+        direction: cfg.direction,
       });
       out.write(CLEAR + lines.join('\r\n'));
     }

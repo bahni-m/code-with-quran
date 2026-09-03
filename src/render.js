@@ -2,6 +2,7 @@
 
 const quran = require('./quran');
 const qt = require('./quran-text');
+const arabic = require('./arabic');
 
 /* ─── ANSI ─────────────────────────────────────────────────────────────── */
 
@@ -79,11 +80,14 @@ function progressBar(percent, width) {
  * @param {{surah:number,ayah:number}} o.position
  * @param {boolean} [o.following]  follow-mode indicator
  * @param {boolean} [o.paused]     activation is off / disabled
+ * @param {'visual'|'logical'} [o.direction]  'visual' (default) reshapes and
+ *        reorders Arabic for terminals with no bidi; 'logical' emits raw text.
  * @returns {string[]}
  */
 function frame(o) {
   const cols = Math.max(24, o.cols || 80);
   const rows = Math.max(10, o.rows || 24);
+  const shape = o.direction === 'logical' ? (s) => s : arabic.toVisual;
   const pos = quran.clampPosition(o.position);
   const s = quran.surah(pos.surah);
   const contentW = Math.min(cols - 4, 72);
@@ -104,7 +108,11 @@ function frame(o) {
     title + ' '.repeat(gap) + flag,
     '',
     ANSI.dim +
-      pad(`${s.name} · ${s.arabic} · ${s.meaning} · ${s.revelationPlace}`, cols, 'center') +
+      pad(
+        `${s.name} · ${shape(s.arabic)} · ${s.meaning} · ${s.revelationPlace}`,
+        cols,
+        'center'
+      ) +
       ANSI.reset,
   ];
 
@@ -119,7 +127,7 @@ function frame(o) {
 
   /* body: current ayah bright, neighbours dim, packed to fill the middle */
   const bodyRows = Math.max(1, rows - header.length - footer.length - 2);
-  const blocks = buildBlocks(pos, contentW, bodyRows);
+  const blocks = buildBlocks(pos, contentW, bodyRows, shape);
 
   const bodyLines = [];
   for (const b of blocks) {
@@ -141,10 +149,10 @@ function frame(o) {
  * The current ayah plus as many neighbours as fit in `maxRows`, current one
  * roughly centred in the stack.
  */
-function buildBlocks(pos, width, maxRows) {
+function buildBlocks(pos, width, maxRows, shape = (s) => s) {
   const make = (p) => {
     const withMarker = `${qt.ayahText(p.surah, p.ayah)} ۝${qt.toArabicDigits(p.ayah)}`;
-    const lines = wrap(withMarker, width).map((l) => pad(l, width, 'right'));
+    const lines = wrap(withMarker, width).map((l) => pad(shape(l), width, 'right'));
     return { lines, current: p.surah === pos.surah && p.ayah === pos.ayah };
   };
 

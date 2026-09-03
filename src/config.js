@@ -22,6 +22,14 @@ const DEFAULTS = Object.freeze({
    * Deduped — one reader is shared across sessions.
    */
   autopane: 'auto',
+  /**
+   * How the terminal reader emits Arabic: visual | logical.
+   * `visual` (default) reshapes and reorders each line so it reads right-to-left
+   * on terminals that don't run the bidi algorithm (tmux, zellij, xterm,
+   * Alacritty, kitty). Set `logical` on a terminal that does its own bidi
+   * (recent Konsole / GNOME Terminal) to avoid a double reversal.
+   */
+  direction: 'visual',
   /** Reader website (when surface includes browser): quran.com | tanzil | quranwbw | alquran.cloud */
   source: 'quran.com',
   /** Explicit browser command, e.g. "firefox" or "google-chrome". Empty = OS default. */
@@ -37,6 +45,7 @@ const KEY_TYPES = {
   loop: 'boolean',
   surface: 'string',
   autopane: 'string',
+  direction: 'string',
   source: 'string',
   browser: 'string',
   browserArgs: 'string',
@@ -45,6 +54,7 @@ const KEY_TYPES = {
 const ENUMS = {
   surface: ['tui', 'browser', 'both'],
   autopane: ['off', 'tmux', 'zellij', 'auto'],
+  direction: ['visual', 'logical'],
   source: ['quran.com', 'tanzil', 'quranwbw', 'alquran.cloud'],
 };
 
