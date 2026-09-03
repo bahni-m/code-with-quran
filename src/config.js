@@ -17,10 +17,11 @@ const DEFAULTS = Object.freeze({
   surface: 'tui',
   /**
    * Auto-open a reader pane on `claude --cwq`: off | tmux | zellij | auto.
-   * Only works inside that multiplexer; `auto` picks whichever is running.
+   * Default `auto`: split a pane when you're inside tmux or zellij, do nothing
+   * otherwise. Set `off` to opt out, or name a multiplexer to pin it.
    * Deduped — one reader is shared across sessions.
    */
-  autopane: 'off',
+  autopane: 'auto',
   /** Reader website (when surface includes browser): quran.com | tanzil | quranwbw | alquran.cloud */
   source: 'quran.com',
   /** Explicit browser command, e.g. "firefox" or "google-chrome". Empty = OS default. */

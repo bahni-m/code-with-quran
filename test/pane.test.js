@@ -30,11 +30,27 @@ test('detectMultiplexer reads the environment', () => {
   assert.equal(pane.detectMultiplexer({ ZELLIJ_SESSION_NAME: 'main' }), 'zellij');
 });
 
-test('openPane --auto is a silent no-op when autopane=off (the default)', () => {
+test('openPane --auto splits a pane in tmux by default (autopane=auto)', () => {
+  process.env.TMUX = 'x';
+  const res = pane.openPane({ auto: true, dryRun: true });
+  assert.equal(res.reason, 'dry-run');
+  assert.equal(res.target, 'tmux');
+});
+
+test('openPane --auto is a silent no-op when autopane=off', () => {
+  const cwq = require('../src/index');
+  cwq.setConfigKey('autopane', 'off');
   process.env.TMUX = 'x';
   const res = pane.openPane({ auto: true, dryRun: true });
   assert.equal(res.spawned, false);
   assert.equal(res.reason, 'disabled');
+  assert.equal(res.code, 'disabled');
+});
+
+test('openPane --auto outside any multiplexer is a quiet no-op', () => {
+  const res = pane.openPane({ auto: true, dryRun: true }); // autopane=auto, no TMUX/ZELLIJ
+  assert.equal(res.spawned, false);
+  assert.equal(res.code, 'no-multiplexer');
 });
 
 test('openPane --auto requires being inside the configured multiplexer', () => {

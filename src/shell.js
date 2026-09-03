@@ -26,7 +26,8 @@ function wrapperSnippet(shell) {
   return `${BEGIN}\n# Managed by \`code-with-quran shell-init\`. Edit above/below, not inside.\n${body}\n${END}\n`;
 }
 
-// `open-pane --auto` is a no-op unless `autopane` is configured; safe to always call.
+// `open-pane --auto` splits a reader pane when you're in tmux/zellij (autopane
+// defaults to `auto`) and is an instant no-op otherwise; safe to always call.
 const PANE = 'command -v code-with-quran >/dev/null && code-with-quran open-pane --auto 2>/dev/null';
 
 function posixBody() {

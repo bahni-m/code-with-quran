@@ -32,29 +32,33 @@ function openPane(opts = {}) {
   let target;
   if (opts.auto) {
     const mode = loadConfig().autopane || 'off';
-    if (mode === 'off') return { spawned: false, reason: 'disabled' };
+    if (mode === 'off') return { spawned: false, reason: 'disabled', code: 'disabled' };
     target = mode === 'auto' ? detectMultiplexer() : mode;
     // asked for a specific multiplexer but we're not in it
     if (mode !== 'auto' && detectMultiplexer() !== mode) {
-      return { spawned: false, reason: `not inside ${mode}` };
+      return { spawned: false, reason: `not inside ${mode}`, code: 'wrong-multiplexer' };
     }
   } else {
     target = detectMultiplexer();
   }
 
-  if (!target) return { spawned: false, reason: 'no multiplexer (need tmux or zellij)' };
-  if (registry.isRunning()) return { spawned: false, reason: 'reader already running' };
+  if (!target) {
+    return { spawned: false, reason: 'no multiplexer (need tmux or zellij)', code: 'no-multiplexer' };
+  }
+  if (registry.isRunning()) {
+    return { spawned: false, reason: 'reader already running', code: 'already-running' };
+  }
 
   const argv =
     target === 'tmux'
       ? ['tmux', 'split-window', '-d', '-h', '-l', '42%', readerCmd]
       : ['zellij', 'run', '--direction', 'right', '--close-on-exit', '--', ...readerCmd.split(' ')];
 
-  if (opts.dryRun) return { spawned: false, reason: 'dry-run', target, argv };
+  if (opts.dryRun) return { spawned: false, reason: 'dry-run', code: 'dry-run', target, argv };
 
   const res = spawnSync(argv[0], argv.slice(1), { stdio: 'ignore' });
   if (res.error || res.status !== 0) {
-    return { spawned: false, reason: `${target} split failed`, target, argv };
+    return { spawned: false, reason: `${target} split failed`, code: 'spawn-failed', target, argv };
   }
   return { spawned: true, target, argv };
 }

@@ -51,23 +51,17 @@ Both writers back up the file they touch (`*.bak-<timestamp>`).
 
 ## Using it day to day
 
-Open a reader in a pane you can see — a tmux split, a second terminal, an editor
-terminal tab — and leave it there:
+**In tmux or zellij?** Nothing to set up — `claude --cwq` splits off a reader
+pane for you. The first session opens it; later sessions reuse the same pane
+(one reader, shared). `code-with-quran status` shows an `Autopane` line telling
+you what it will do. Turn it off with `code-with-quran config autopane off`.
+
+**Not in a multiplexer?** Open a reader in a pane you can see — a second
+terminal, an editor terminal tab — and leave it there:
 
 ```bash
 code-with-quran read
 ```
-
-**In tmux or zellij?** Skip that step and let `claude --cwq` open the pane for
-you:
-
-```bash
-code-with-quran config autopane auto
-```
-
-Now the first `claude --cwq` splits off a reader pane; later sessions reuse it
-(one reader, shared). Outside a multiplexer there's no pane to make, so open one
-yourself with `code-with-quran read`.
 
 Then start your Claude sessions through the wrapper:
 
@@ -107,7 +101,7 @@ Config lives in `~/.code-with-quran/config.json`; set values with
 | `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
 | `surface` | `tui` | Where an advance shows up: `tui`, `browser`, or `both`. |
-| `autopane` | `off` | Auto-open the reader pane on `claude --cwq`: `off`, `tmux`, `zellij`, or `auto`. |
+| `autopane` | `auto` | Auto-open the reader pane on `claude --cwq`: `auto` splits a pane when you're in tmux or zellij, `off` never does, `tmux`/`zellij` pin it to one. |
 | `source` | `quran.com` | Browser reader site — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
 | `browser` | `""` | Explicit browser command. Empty = your OS default. |
 | `browserArgs` | `""` | Extra arguments for that command. |
@@ -147,9 +141,10 @@ Three moving parts:
    sets `CODE_WITH_QURAN=1` for that one invocation and runs the real binary via
    `command claude` — no recursion, and the variable never leaks into your
    shell. It also runs `code-with-quran open-pane --auto`, which splits off a
-   reader pane when `autopane` says so (and is otherwise an instant no-op).
-   `shell-init` writes a `claude()` function for bash/zsh and a `function claude`
-   for fish; `--shell=…` overrides the `$SHELL` guess.
+   reader pane when you're in tmux/zellij (`autopane`, default `auto`) and is an
+   instant no-op otherwise. `shell-init` writes a `claude()` function for
+   bash/zsh and a `function claude` for fish; `--shell=…` overrides the `$SHELL`
+   guess.
 2. **The hook** runs `code-with-quran open --quiet --session-only` on every
    `UserPromptSubmit`. `--session-only` makes it a no-op unless that variable is
    set. When it does run it advances the pointer in

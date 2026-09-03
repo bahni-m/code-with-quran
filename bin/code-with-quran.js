@@ -175,7 +175,16 @@ function main() {
       if (res.spawned) {
         out(flags, `Opened a reader pane (${res.target}).`, res);
       } else if (flags.auto) {
-        out(flags, null, res); // wrapper mode: never nag, just carry on
+        // Wrapper mode: stay quiet for the expected non-events (disabled, no
+        // multiplexer, reader already up), but say something when the split
+        // was actually meant to happen and didn't.
+        if (res.code === 'spawn-failed' || res.code === 'wrong-multiplexer') {
+          process.stderr.write(
+            `code-with-quran: reader pane not opened — ${res.reason}. ` +
+              `Open one yourself with 'code-with-quran read'.\n`
+          );
+        }
+        out(flags, null, res);
       } else {
         out(flags, `No reader pane: ${res.reason}.`, res);
       }
@@ -209,6 +218,18 @@ function main() {
       const reader = s.reader
         ? `running (pid ${s.reader.pid})`
         : 'not running — start one with: code-with-quran read';
+      const mux = pane.detectMultiplexer();
+      const autopane = s.config.autopane;
+      let autopaneNote;
+      if (autopane === 'off') {
+        autopaneNote = "  (off — open a pane yourself with 'code-with-quran read')";
+      } else if (!mux) {
+        autopaneNote = '  (no tmux/zellij here — nothing to split)';
+      } else if (autopane !== 'auto' && autopane !== mux) {
+        autopaneNote = `  (set to ${autopane} but you're in ${mux})`;
+      } else {
+        autopaneNote = `  (${mux} — pane opens on 'claude --cwq')`;
+      }
       const lines = [
         `Activation ${active ? 'ON  (this session was started with --cwq)' : 'OFF (plain claude — hook is a no-op)'}`,
         `Reader     ${reader}`,
@@ -218,6 +239,7 @@ function main() {
         `Last       ${s.lastOpenedAt || '—'}`,
         `Started    ${s.startedAt || '—'}`,
         `Surface    ${s.config.surface}${s.config.surface !== 'tui' ? `  (source ${s.config.source})` : ''}`,
+        `Autopane   ${autopane}${autopaneNote}`,
         `Enabled    ${s.config.enabled}   ayatPerSession=${s.config.ayatPerSession}   cooldown=${s.config.cooldownMinutes}m   loop=${s.config.loop}`,
       ];
       if (s.recent.length) {
@@ -306,8 +328,8 @@ function main() {
             `Reload your shell:  source ${res.file}`,
             `Then run:  claude --cwq   (or  claude --cwq-dgr)`,
             '',
-            `In tmux/zellij? 'code-with-quran config autopane auto' opens the`,
-            `reader pane for you on 'claude --cwq'.`,
+            `In tmux/zellij? 'claude --cwq' opens the reader pane for you`,
+            `(disable with 'code-with-quran config autopane off').`,
           ]
             .filter((l) => l !== null)
             .join('\n'),
