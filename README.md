@@ -1,82 +1,78 @@
-# code-with-quran
+<div align="center">
 
-> Turn the wait into worship. When you start a Claude Code session with
-> `claude --cwq`, every prompt opens the Qur'an in your browser — picking up
-> from the ayah **after** the last one it showed you.
+# 📖 code-with-quran
 
-No dashboards, no streak-shaming. Claude starts working → a tab opens at your
-next ayah → you read a few lines instead of watching a spinner. On a plain
-`claude` (no `--cwq`), it stays completely silent.
+**Read the Qur'an while Claude Code works.**
+
+Start a session with `claude --cwq` and every prompt you send opens the next
+ayah in your browser — resuming from wherever you last left off.
+
+![license](https://img.shields.io/badge/license-MIT-blue)
+![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)
+![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
+![tests](https://img.shields.io/badge/tests-passing-brightgreen)
+
+</div>
 
 ---
 
-## How it works
+Claude starts working, a tab opens at your next ayah, and you read a few lines
+instead of watching a spinner. On a plain `claude` — without `--cwq` — nothing
+happens at all.
 
-Two pieces:
+It keeps one pointer (`surah:ayah`) on disk. Each open shows the current
+position, then advances by one ayah, crossing surah boundaries and wrapping
+from An-Nas back to Al-Fatihah when you finish the whole Qur'an.
 
-1. **A shell wrapper** around `claude`. `claude --cwq` exports `CODE_WITH_QURAN=1`
-   and then runs the real `claude`. `claude --cwq-dgr` does the same *and* adds
-   `--dangerously-skip-permissions`.
-2. **A Claude Code hook** on `UserPromptSubmit` that runs
-   `code-with-quran open --quiet --session-only`. The `--session-only` flag makes
-   it a no-op unless `CODE_WITH_QURAN=1` is in the environment — i.e. unless the
-   session was started through the wrapper.
+```
+$ code-with-quran status
+Activation ON  (this session was started with --cwq)
+Position   Al-Baqarah 2:255  (The Cow)
+Progress   [########----------------] 34.5%  2150/6236 ayat
+Opens      41  (total 41)
+Source     quran.com
+```
 
-`code-with-quran` keeps a single pointer (`surah:ayah`) in
-`~/.code-with-quran/state.json`. On each open it:
+## Quickstart
 
-1. opens your browser at the current pointer (e.g. `quran.com/2/255`)…
-2. …then advances by `ayatPerSession` ayat (default: 1), crossing surah
-   boundaries and wrapping `114 → 1` when you finish.
-
-A cooldown (default: 3 minutes) means rapid back-to-back prompts won't bury you
-in tabs. It can't know exactly which ayah you stopped on, so it assumes you read
-what it showed. Drifted? `code-with-quran set 2:255` fixes the pointer.
-
-## Install
-
-Requires Node.js ≥ 18. Zero runtime dependencies.
+Node.js ≥ 18. No runtime dependencies.
 
 ```bash
 git clone https://github.com/bahni-m/code-with-quran.git
 cd code-with-quran
-npm link          # puts `code-with-quran` (and `cwq`) on your PATH
+npm link                              # code-with-quran + cwq onto your PATH
+
+code-with-quran shell-init --append   # add the `claude --cwq` wrapper to your shell
+code-with-quran install               # add the Claude Code hook
+source ~/.bashrc                       # or ~/.zshrc, or restart your shell
 ```
 
-Then wire up both pieces:
+Both writers back up the file they touch first (`*.bak-<timestamp>`).
 
-```bash
-code-with-quran shell-init --append   # adds the claude --cwq wrapper to your rc file
-code-with-quran install               # adds the Claude Code hook (~/.claude/settings.json)
-source ~/.bashrc                       # or ~/.zshrc / restart your shell
-```
+Then start your sessions like this:
 
-Both writers back up the file they touch (`*.bak-<timestamp>`).
-
-## Use it
-
-```bash
-claude --cwq                  # normal session, Qur'an enabled
-claude --cwq-dgr              # + --dangerously-skip-permissions
-claude                        # nothing happens — code-with-quran stays silent
-```
+| Command | Effect |
+| --- | --- |
+| `claude --cwq` | Qur'an enabled for this session |
+| `claude --cwq-dgr` | same, plus `--dangerously-skip-permissions` |
+| `claude` | untouched — code-with-quran stays silent |
 
 `--cwq` / `--cwq-dgr` must be the **first** argument.
 
-## Uninstall
+## How it works
 
-```bash
-code-with-quran uninstall              # removes the hook
-code-with-quran shell-init --remove    # removes the wrapper
+```mermaid
+flowchart LR
+    A["claude --cwq"] -->|exports CODE_WITH_QURAN=1| B[Claude Code session]
+    B -->|every prompt| C[UserPromptSubmit hook]
+    C --> D{activated?}
+    D -->|yes| E[open next ayah<br/>advance the pointer]
+    D -->|no| F[do nothing]
 ```
 
-## The shell wrapper
-
-`code-with-quran shell-init` prints the wrapper; `--append` writes it, `--remove`
-takes it back out. Target shell is detected from `$SHELL`; override with
-`--shell=bash|zsh|fish`. bash/zsh use a `claude()` function; fish uses a
-`function claude`. In every case the real binary is reached via `command claude`,
-so there's no recursion, and the env var is scoped to that one invocation.
+**The shell wrapper** replaces `claude` with a small function. `claude --cwq`
+sets `CODE_WITH_QURAN=1` for that one invocation and then runs the real binary
+via `command claude` (no recursion, no leak into your shell).
 
 ```sh
 claude() {
@@ -88,64 +84,85 @@ claude() {
 }
 ```
 
+**The hook** runs `code-with-quran open --quiet --session-only` on every
+`UserPromptSubmit`. `--session-only` makes it a no-op unless that environment
+variable is set — so the hook is inert until you opt in with `--cwq`.
+
+`shell-init` detects your shell from `$SHELL`; override with
+`--shell=bash|zsh|fish`. fish gets a `function claude` equivalent.
+
 ## Commands
 
-| Command | What it does |
-| --- | --- |
-| `code-with-quran` / `… open` | Open the current ayah, then advance the pointer |
-| `… open --session-only` | No-op unless started via `claude --cwq` (the hook uses this) |
-| `… open --force` | Ignore the cooldown |
-| `… open --dry-run` | Show what would happen; open nothing, save nothing |
-| `… peek` | Print the current ayah + URL, no open, no advance |
-| `… status` | Activation state, progress bar, open count, config |
-| `… set <ref>` | Point at an ayah — `2:255`, `Al-Kahf`, `baqarah 255` |
-| `… next [n]` / `… back [n]` | Nudge the pointer without opening a browser |
-| `… reset` | Back to Al-Fatihah 1:1, counters cleared |
-| `… config [key] [value]` | Get / set configuration |
-| `… shell-init [--append\|--remove] [--shell=…]` | Manage the `claude` wrapper |
-| `… install` / `… uninstall` | Manage the Claude Code hook |
+`cwq` is a short alias. `--json` on any command gives machine-readable output.
 
-`--json` on any command gives machine-readable output. `cwq` is a short alias.
+| Command | Description |
+| --- | --- |
+| `open` *(default)* | Open the current ayah, then advance the pointer |
+| `open --force` | Ignore the cooldown |
+| `open --dry-run` | Show what would happen; open nothing, save nothing |
+| `peek` | Print the current ayah + URL — no open, no advance |
+| `status` | Activation state, progress, open count, config |
+| `set <ref>` | Point at an ayah — `2:255`, `Al-Kahf`, `baqarah 255` |
+| `next [n]` / `back [n]` | Move the pointer without opening a browser |
+| `reset` | Back to Al-Fatihah 1:1, counters cleared |
+| `config [key] [value]` | Get or set configuration |
+| `shell-init [--append \| --remove]` | Manage the `claude` wrapper |
+| `install` / `uninstall` | Manage the Claude Code hook |
 
 ## Configuration
 
 Stored in `~/.code-with-quran/config.json`.
 
-| Key | Type | Default | Meaning |
-| --- | --- | --- | --- |
-| `enabled` | boolean | `true` | Master switch. `false` makes `open` a no-op even when activated. |
-| `ayatPerSession` | number | `1` | Ayat to advance per open. |
-| `cooldownMinutes` | number | `3` | Minimum gap between opens. |
-| `loop` | boolean | `true` | Wrap `114:6 → 1:1` instead of stopping. |
-| `source` | string | `quran.com` | Reader site: `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
-| `browser` | string | `""` | Explicit browser command. Empty = OS default opener. |
-| `browserArgs` | string | `""` | Extra args for that command. |
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `enabled` | `true` | Master switch. `false` makes `open` a no-op even when activated. |
+| `ayatPerSession` | `1` | How many ayat to advance per open. |
+| `cooldownMinutes` | `3` | Minimum gap between opens, so rapid prompts don't spawn tabs. |
+| `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
+| `source` | `quran.com` | Reader site: `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
+| `browser` | `""` | Explicit browser command. Empty = your OS default. |
+| `browserArgs` | `""` | Extra arguments for that command. |
 
 ```bash
 code-with-quran config ayatPerSession 3
 code-with-quran config source tanzil
 code-with-quran config cooldownMinutes 10
-code-with-quran config browser firefox
+```
+
+It can't know which ayah you actually stopped on, so it assumes you read what it
+showed you. If the pointer drifts, `code-with-quran set 2:255` puts it back.
+
+## Uninstall
+
+```bash
+code-with-quran uninstall             # remove the hook
+code-with-quran shell-init --remove   # remove the wrapper
 ```
 
 ## Data
 
-`data/surahs.json` holds all 114 surahs with names (transliterated + Arabic),
-meanings, and ayah counts using the standard Ḥafṣ / Kūfan numbering (6236 ayat
-total). Regenerate with `npm run build-data`.
+`data/surahs.json` — all 114 surahs with transliterated and Arabic names,
+meanings, and ayah counts (standard Ḥafṣ / Kūfan numbering, 6236 ayat total).
+Regenerate with `npm run build-data`.
 
 ## Development
 
 ```bash
-npm test            # node:test — no network, no browser, no shell rc touched
-npm run build-data
+npm test          # node:test — no network, no browser, no rc files touched
 ```
 
-`src/` is split so each piece is testable on its own: `quran.js` (metadata +
-progression maths), `state.js`, `config.js`, `session.js` (the activation gate),
-`open.js` (cross-platform launch), `shell.js` (wrapper generation + rc editing),
-`hook.js` (settings.json surgery), `index.js` (the `open` orchestration).
+`src/` is split so each piece stands alone:
+
+| Module | Responsibility |
+| --- | --- |
+| `quran.js` | Surah metadata and progression maths (advance, rewind, reference parsing, URLs) |
+| `state.js` / `config.js` | JSON persistence under `~/.code-with-quran/` |
+| `session.js` | The `CODE_WITH_QURAN` activation gate |
+| `open.js` | Cross-platform browser launch |
+| `shell.js` | Wrapper generation and rc-file editing |
+| `hook.js` | Claude Code `settings.json` install / uninstall |
+| `index.js` | The `open` orchestration |
 
 ## License
 
-MIT
+[MIT](LICENSE)
