@@ -5,8 +5,8 @@
 **Read the Qur'an while Claude Code works.**
 
 Keep a reader pane open next to your session. Start Claude with `claude --cwq`
-and, as you work, the reader walks forward through the Qur'an an ayah at a time —
-resuming from wherever you last left off.
+and, as you work, the reader walks forward through the Qur'an an ayah at a
+time — resuming from wherever you last left off.
 
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)
@@ -19,11 +19,8 @@ resuming from wherever you last left off.
 
 Claude starts working, the ayah in your other pane moves forward, and you read a
 few lines instead of watching a spinner. It stays in the terminal — no browser,
-no context switch. Without `--cwq` the hook stays silent, so the reader just
-holds on the current ayah until you move it yourself.
-
-The whole Uthmani text is bundled (Tanzil Project, ~1.3 MB), so the reader works
-offline and instantly.
+no context switch. The whole Uthmani text is bundled (~1.3 MB), so the reader is
+instant and works offline.
 
 ```
                           Al-Baqarah · البقرة · The Cow · Medinan
@@ -36,7 +33,7 @@ offline and instantly.
                    j/k move · g goto · f follow · r reload · q quit
 ```
 
-## Quickstart
+## Install
 
 Node.js ≥ 18. No runtime dependencies.
 
@@ -52,20 +49,73 @@ source ~/.bashrc                       # or ~/.zshrc, or restart your shell
 
 Both writers back up the file they touch (`*.bak-<timestamp>`).
 
-Then, in day-to-day use:
+## Using it day to day
+
+Open a reader in a pane you can see — a tmux split, a second terminal, an editor
+terminal tab — and leave it there:
 
 ```bash
-code-with-quran read     # in a second pane / tmux split — leave it open
-claude --cwq             # your session; the reader follows along as you work
+code-with-quran read
 ```
 
-| Start command | Effect |
-| --- | --- |
-| `claude --cwq` | reader follows this session |
-| `claude --cwq-dgr` | same, plus `--dangerously-skip-permissions` |
-| `claude` | hook stays silent — the reader won't auto-advance |
+Then start your Claude sessions through the wrapper:
 
-`--cwq` / `--cwq-dgr` must be the **first** argument.
+| Command | What happens |
+| --- | --- |
+| `claude --cwq` | the reader follows this session — each prompt nudges it forward (at most once every few minutes) |
+| `claude --cwq-dgr` | same, plus `--dangerously-skip-permissions` |
+| `claude` | the reader stays put; move it yourself with the keys below |
+
+`--cwq` / `--cwq-dgr` must come first, before any other argument.
+
+The reader assumes you read what it showed you, so the pointer only drifts if
+you skim. Steer it any time:
+
+| Key | Action |
+| --- | --- |
+| `j` / `→` / `space` | next ayah |
+| `k` / `←` | previous ayah |
+| `g` | go to a reference (`2:255`, `Al-Kahf`, `baqarah 255`) |
+| `f` | toggle follow-mode (jump when the hook advances) |
+| `r` | reload from disk |
+| `q` / `Esc` | quit |
+
+Away from the reader: `code-with-quran set 2:255` to reposition,
+`code-with-quran now` to print the current ayah (handy in a tmux status line),
+`code-with-quran status` for progress and activation state.
+
+## Make it yours
+
+Config lives in `~/.code-with-quran/config.json`; set values with
+`code-with-quran config <key> <value>`.
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `ayatPerSession` | `1` | Ayat to advance per prompt. |
+| `cooldownMinutes` | `3` | Minimum gap between advances, so a burst of quick prompts doesn't run you ahead several ayat. |
+| `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
+| `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
+| `surface` | `tui` | Where an advance shows up: `tui`, `browser`, or `both`. |
+| `source` | `quran.com` | Browser reader site — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
+| `browser` | `""` | Explicit browser command. Empty = your OS default. |
+| `browserArgs` | `""` | Extra arguments for that command. |
+
+Prefer the browser to a terminal pane?
+
+```bash
+code-with-quran config surface browser   # open quran.com on each advance
+code-with-quran config surface both      # reader pane *and* browser
+```
+
+## Turn it off
+
+```bash
+code-with-quran config enabled false   # pause advancing, keep everything installed
+code-with-quran uninstall               # remove the Claude Code hook
+code-with-quran shell-init --remove      # remove the shell wrapper
+```
+
+---
 
 ## How it works
 
@@ -83,36 +133,18 @@ Three moving parts:
 
 1. **The shell wrapper** replaces `claude` with a small function. `claude --cwq`
    sets `CODE_WITH_QURAN=1` for that one invocation and runs the real binary via
-   `command claude` (no recursion, no leak into your shell).
+   `command claude` — no recursion, and the variable never leaks into your
+   shell. `shell-init` writes a `claude()` function for bash/zsh and a
+   `function claude` for fish; `--shell=…` overrides the `$SHELL` guess.
 2. **The hook** runs `code-with-quran open --quiet --session-only` on every
    `UserPromptSubmit`. `--session-only` makes it a no-op unless that variable is
-   set. When it does run it advances the pointer in `state.json` — at most once
-   per `cooldownMinutes` (default 3), so a burst of quick prompts doesn't run you
-   through a whole surah — and by default does nothing else (`surface = tui`).
+   set. When it does run it advances the pointer in
+   `~/.code-with-quran/state.json` — at most once per `cooldownMinutes` — and by
+   default does nothing else (`surface = tui`).
 3. **The reader** (`code-with-quran read`) watches `state.json` and jumps to the
    new ayah whenever the pointer moves — from the hook, or from another pane.
-
-The reader can't know which ayah you actually stopped on, so it assumes you read
-what it showed. Navigate with `j`/`k` or `g` and the pointer follows you.
-
-### Reader keys
-
-| Key | Action |
-| --- | --- |
-| `j` / `→` / `space` | next ayah |
-| `k` / `←` | previous ayah |
-| `f` | toggle follow-mode (jump when the hook advances) |
-| `g` | go to a reference (`2:255`, `Al-Kahf`, `baqarah 255`) |
-| `r` | reload from disk |
-| `q` / `Esc` | quit |
-
-## Prefer a browser?
-
-```bash
-code-with-quran config surface browser   # open quran.com on each advance instead
-code-with-quran config surface both      # reader pane *and* browser
-code-with-quran config source tanzil     # quran.com | tanzil | quranwbw | alquran.cloud
-```
+   Navigating with `j`/`k`/`g` writes the pointer back, so "where you are" stays
+   consistent no matter what moved it.
 
 ## Commands
 
@@ -121,7 +153,7 @@ code-with-quran config source tanzil     # quran.com | tanzil | quranwbw | alqur
 | Command | Description |
 | --- | --- |
 | `read` | Full-screen reader pane; follows the pointer |
-| `now` | Print the current ayah (Arabic + ref) — for tmux/statuslines |
+| `now` | Print the current ayah (Arabic + ref) |
 | `open` *(default)* | Advance the pointer (+ browser if `surface` includes it) |
 | `open --session-only` | No-op unless started via `claude --cwq` (the hook uses this) |
 | `open --force` | Ignore the cooldown |
@@ -134,38 +166,15 @@ code-with-quran config source tanzil     # quran.com | tanzil | quranwbw | alqur
 | `shell-init [--append \| --remove] [--shell=…]` | Manage the `claude` wrapper |
 | `install` / `uninstall` | Manage the Claude Code hook |
 
-## Configuration
+## The Qur'an text
 
-Stored in `~/.code-with-quran/config.json`.
-
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `enabled` | `true` | Master switch. `false` makes `open` a no-op even when activated. |
-| `ayatPerSession` | `1` | Ayat to advance per prompt. |
-| `cooldownMinutes` | `3` | Minimum gap between advances, so a burst of quick prompts doesn't run you ahead several ayat. |
-| `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
-| `surface` | `tui` | Where an advance surfaces: `tui`, `browser`, or `both`. |
-| `source` | `quran.com` | Browser reader site (when `surface` includes browser). |
-| `browser` | `""` | Explicit browser command. Empty = your OS default. |
-| `browserArgs` | `""` | Extra arguments for that command. |
-
-## Uninstall
-
-```bash
-code-with-quran uninstall             # remove the hook
-code-with-quran shell-init --remove   # remove the wrapper
-```
-
-## Data
-
+- `data/quran-uthmani.json` — the full Uthmani text, one entry per ayah (6236).
 - `data/surahs.json` — 114 surahs: names (transliterated + Arabic), meanings,
   ayah counts, revelation place.
-- `data/quran-uthmani.json` — the full Uthmani text, one entry per ayah
-  (6236 total).
 
-Qur'an text: **Tanzil Project** (Uthmani), CC BY 3.0, retrieved via
+Text: **Tanzil Project** (Uthmani), CC BY 3.0, retrieved via
 [alquran.cloud](https://alquran.cloud). See
-[`data/QURAN-TEXT-LICENSE.txt`](data/QURAN-TEXT-LICENSE.txt). Rebuild:
+[`data/QURAN-TEXT-LICENSE.txt`](data/QURAN-TEXT-LICENSE.txt). To rebuild:
 
 ```bash
 curl -sS https://api.alquran.cloud/v1/quran/quran-uthmani -o /tmp/u.json
