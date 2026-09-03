@@ -5,6 +5,8 @@ const { loadConfig, saveConfig, coerceValue, DEFAULTS, KEY_TYPES } = require('./
 const { loadState, saveState, resetState, position } = require('./state');
 const { openUrl } = require('./open');
 const { isSessionActive } = require('./session');
+const readerRegistry = require('./reader-registry');
+const qt = require('./quran-text');
 
 /**
  * The heart of the tool: open the current ayah, then advance the pointer.
@@ -62,13 +64,17 @@ function open(opts = {}) {
   }
 
   const next = quran.advance(shownFrom, config.ayatPerSession, config.loop);
+  const surface = config.surface || 'tui';
+  const usedBrowser = surface === 'browser' || surface === 'both';
 
   if (!dryRun) {
-    openUrl(url, { browser: config.browser, browserArgs: config.browserArgs });
+    if (usedBrowser) {
+      openUrl(url, { browser: config.browser, browserArgs: config.browserArgs });
+    }
     const entry = {
       at: now.toISOString(),
       shown: `${shownFrom.surah}:${shownFrom.ayah}`,
-      url,
+      surface,
     };
     saveState({
       ...state,
@@ -82,7 +88,36 @@ function open(opts = {}) {
     });
   }
 
-  return { opened: true, shownFrom, nextPosition: next, url, progress };
+  return {
+    opened: true,
+    surface,
+    usedBrowser,
+    readerRunning: readerRegistry.isRunning(),
+    shownFrom,
+    nextPosition: next,
+    url,
+    progress,
+  };
+}
+
+/** The current ayah as plain data — for `now`, statuslines, scripting. */
+function nowAyah() {
+  const config = loadConfig();
+  const pos = position(loadState());
+  const idx = quran.absoluteIndex(pos);
+  return {
+    position: pos,
+    label: quran.label(pos),
+    ref: `${pos.surah}:${pos.ayah}`,
+    arabic: qt.ayahText(pos.surah, pos.ayah),
+    surah: quran.surah(pos.surah),
+    url: quran.buildUrl(pos, config.source),
+    progress: {
+      index: idx,
+      total: quran.TOTAL_AYAT,
+      percent: Math.round((idx / quran.TOTAL_AYAT) * 1000) / 10,
+    },
+  };
 }
 
 /** Read-only snapshot for `status` / `peek`. */
@@ -106,6 +141,7 @@ function status() {
     lastOpenedAt: state.lastOpenedAt,
     startedAt: state.startedAt,
     recent: state.history.slice(-5).reverse(),
+    reader: readerRegistry.current(),
     config,
   };
 }
@@ -154,6 +190,7 @@ function setConfigKey(key, rawValue) {
 module.exports = {
   open,
   status,
+  nowAyah,
   setPosition,
   moveNext,
   moveBack,

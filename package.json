@@ -1,7 +1,7 @@
 {
   "name": "code-with-quran",
-  "version": "0.2.0",
-  "description": "Open the Qur'an in your browser while a Claude Code session works — progressively, one ayah after the last. Activates only with `claude --cwq`.",
+  "version": "0.3.0",
+  "description": "Read the Qur'an in a TUI while a Claude Code session works — each prompt advances you one ayah. Activates with `claude --cwq`.",
   "keywords": [
     "quran",
     "alquran",
@@ -32,7 +32,7 @@
     "bin/",
     "src/",
     "data/",
-    "scripts/build-data.js",
+    "scripts/",
     "README.md",
     "LICENSE"
   ],

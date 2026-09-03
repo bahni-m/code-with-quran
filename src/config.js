@@ -13,7 +13,9 @@ const DEFAULTS = Object.freeze({
   cooldownMinutes: 3,
   /** Wrap from 114:6 back to 1:1 instead of stopping at the end. */
   loop: true,
-  /** Reader website: quran.com | tanzil | quranwbw | alquran.cloud */
+  /** Where each advance surfaces: tui | browser | both. */
+  surface: 'tui',
+  /** Reader website (when surface includes browser): quran.com | tanzil | quranwbw | alquran.cloud */
   source: 'quran.com',
   /** Explicit browser command, e.g. "firefox" or "google-chrome". Empty = OS default. */
   browser: '',
@@ -26,9 +28,15 @@ const KEY_TYPES = {
   ayatPerSession: 'number',
   cooldownMinutes: 'number',
   loop: 'boolean',
+  surface: 'string',
   source: 'string',
   browser: 'string',
   browserArgs: 'string',
+};
+
+const ENUMS = {
+  surface: ['tui', 'browser', 'both'],
+  source: ['quran.com', 'tanzil', 'quranwbw', 'alquran.cloud'],
 };
 
 function loadConfig() {
@@ -56,7 +64,9 @@ function sanitise(obj) {
   if (!obj || typeof obj !== 'object') return out;
   for (const [key, type] of Object.entries(KEY_TYPES)) {
     if (obj[key] === undefined) continue;
-    if (typeof obj[key] === type) out[key] = obj[key];
+    if (typeof obj[key] !== type) continue;
+    if (ENUMS[key] && !ENUMS[key].includes(obj[key])) continue;
+    out[key] = obj[key];
   }
   return out;
 }
@@ -79,7 +89,10 @@ function coerceValue(key, value) {
     if (!Number.isFinite(n) || n < 0) throw new Error(`"${key}" expects a non-negative number, got "${value}"`);
     return n;
   }
+  if (ENUMS[key] && !ENUMS[key].includes(value)) {
+    throw new Error(`"${key}" expects one of: ${ENUMS[key].join(', ')} — got "${value}"`);
+  }
   return value;
 }
 
-module.exports = { DEFAULTS, KEY_TYPES, loadConfig, saveConfig, coerceValue };
+module.exports = { DEFAULTS, KEY_TYPES, ENUMS, loadConfig, saveConfig, coerceValue };

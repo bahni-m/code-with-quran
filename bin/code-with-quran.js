@@ -4,8 +4,9 @@
 const cwq = require('../src/index');
 const hook = require('../src/hook');
 const shell = require('../src/shell');
-const { KEY_TYPES, DEFAULTS } = require('../src/config');
-const { ENV_VAR, isSessionActive } = require('../src/session');
+const tui = require('../src/tui');
+const { KEY_TYPES, DEFAULTS, ENUMS } = require('../src/config');
+const { isSessionActive } = require('../src/session');
 
 const VERSION = require('../package.json').version;
 
@@ -37,36 +38,45 @@ function bar(percent, width = 24) {
 }
 
 const HELP = `code-with-quran v${VERSION}
-Open the Qur'an in your browser while a Claude Code session works — each open
-picks up from the ayah after the last one you were shown.
+Read the Qur'an while a Claude Code session works — each prompt advances you one
+ayah from where you last left off.
 
-Only active when the session was started with the wrapper:
+Keep a reader open in a second pane:
+  code-with-quran read
+Start Claude sessions with the wrapper so the hook advances that reader:
   claude --cwq        activate for this session
   claude --cwq-dgr    activate + --dangerously-skip-permissions
-Install the wrapper with:  code-with-quran shell-init --append
+  (install the wrapper: code-with-quran shell-init --append)
 
 USAGE
   code-with-quran [command] [options]     (alias: cwq)
 
 COMMANDS
-  open                 Open the current ayah, then advance the pointer (default)
-  peek                 Print the current ayah + URL without opening or advancing
-  status               Show progress, streak, activation and configuration
+  read                 Full-screen reader pane; follows the pointer as you work
+  now                  Print the current ayah (Arabic + ref) — for statuslines
+  open                 Advance the pointer (+ open browser if surface=browser)
+  peek                 Print the current ayah + URL without advancing
+  status               Progress, reader state, activation and configuration
   set <reference>      Point at an ayah, e.g. "2:255", "Al-Kahf", "baqarah 255"
-  next [n]             Move the pointer forward n ayat (default 1), no browser
-  back [n]             Move the pointer backward n ayat (default 1), no browser
+  next [n]             Move the pointer forward n ayat (default 1)
+  back [n]             Move the pointer backward n ayat (default 1)
   reset                Return the pointer to 1:1 and clear counters
   config               Print current configuration
   config <key> <val>   Set a configuration value
-  shell-init           Print the shell wrapper (claude --cwq / --cwq-dgr)
+  shell-init           Print / install the shell wrapper (claude --cwq)
   install              Add the Claude Code hook (default event: UserPromptSubmit)
   uninstall            Remove the Claude Code hook
   help                 Show this text
 
+READER KEYS
+  j / k                Next / previous ayah        f   toggle follow-mode
+  g                    Go to a reference           r   reload from disk
+  q                    Quit
+
 OPEN OPTIONS
   --session-only       No-op unless started via 'claude --cwq' (used by the hook)
   --force              Ignore the cooldown
-  --dry-run            Show what would happen; open nothing, save nothing
+  --dry-run            Show what would happen; change nothing
   --quiet              Print nothing on success (used by the hook)
   --json               Machine-readable output
 
@@ -82,7 +92,10 @@ INSTALL OPTIONS
 
 CONFIG KEYS
 ${Object.entries(KEY_TYPES)
-  .map(([k, t]) => `  ${k.padEnd(16)} ${t.padEnd(8)} (default: ${JSON.stringify(DEFAULTS[k])})`)
+  .map(([k, t]) => {
+    const hint = ENUMS[k] ? ENUMS[k].join('|') : t;
+    return `  ${k.padEnd(16)} ${hint.padEnd(26)} (default: ${JSON.stringify(DEFAULTS[k])})`;
+  })
   .join('\n')}
 `;
 
@@ -123,26 +136,45 @@ function main() {
         return;
       }
       if (!res.opened && res.reason === 'disabled') {
-        out(flags, 'code-with-quran is disabled (config: enabled=false). Nothing opened.', res);
+        out(flags, 'code-with-quran is disabled (config: enabled=false). Nothing advanced.', res);
         return;
       }
       if (!res.opened && res.reason === 'cooldown') {
         out(
           flags,
-          `Cooldown active — ${fmtDuration(res.cooldownRemainingMs)} left. Use --force to open now.`,
+          `Cooldown active — ${fmtDuration(res.cooldownRemainingMs)} left. Use --force to advance now.`,
           res
         );
         return;
       }
       const from = cwq.quran.label(res.shownFrom);
       const next = cwq.quran.label(res.nextPosition);
-      const verb = flags['dry-run'] ? 'Would open' : 'Opening';
+      const verb = flags['dry-run'] ? 'Would show' : 'Now showing';
+      let note;
+      if (res.usedBrowser) note = `  ${res.url}`;
+      else if (res.readerRunning) note = '  (updated your reader pane)';
+      else note = "  (run 'code-with-quran read' in another pane to see it)";
       out(
         flags,
-        `${verb} ${from}\n  ${res.url}\n  ${bar(res.progress.percent)} ${res.progress.percent}% ` +
+        `${verb} ${from}\n${note}\n  ${bar(res.progress.percent)} ${res.progress.percent}% ` +
           `(${res.progress.index}/${res.progress.total})\n  next → ${next}`,
         res
       );
+      return;
+    }
+
+    case 'read': {
+      tui.run().then(() => process.exit(0));
+      return;
+    }
+
+    case 'now': {
+      const n = cwq.nowAyah();
+      if (flags.json) {
+        out(flags, null, n);
+      } else {
+        process.stdout.write(`${n.arabic}\n${n.label}\n`);
+      }
       return;
     }
 
@@ -160,14 +192,18 @@ function main() {
     case 'status': {
       const s = cwq.status();
       const active = isSessionActive();
+      const reader = s.reader
+        ? `running (pid ${s.reader.pid})`
+        : 'not running — start one with: code-with-quran read';
       const lines = [
         `Activation ${active ? 'ON  (this session was started with --cwq)' : 'OFF (plain claude — hook is a no-op)'}`,
+        `Reader     ${reader}`,
         `Position   ${s.label}  (${s.surah.meaning})`,
         `Progress   ${bar(s.progress.percent)} ${s.progress.percent}%  ${s.progress.index}/${s.progress.total} ayat`,
-        `Opens      ${s.opens}  (total ${s.totalOpened})`,
-        `Last open  ${s.lastOpenedAt || '—'}`,
+        `Advances   ${s.opens}  (total ${s.totalOpened})`,
+        `Last       ${s.lastOpenedAt || '—'}`,
         `Started    ${s.startedAt || '—'}`,
-        `Source     ${s.config.source}`,
+        `Surface    ${s.config.surface}${s.config.surface !== 'tui' ? `  (source ${s.config.source})` : ''}`,
         `Enabled    ${s.config.enabled}   ayatPerSession=${s.config.ayatPerSession}   cooldown=${s.config.cooldownMinutes}m   loop=${s.config.loop}`,
       ];
       if (s.recent.length) {
@@ -289,8 +325,9 @@ function main() {
         `  command ${res.command}`,
         res.backupPath ? `  backup  ${res.backupPath}` : null,
         '',
-        `Next: install the session wrapper so it actually runs —`,
-        `  code-with-quran shell-init --append`,
+        `Next:`,
+        `  code-with-quran shell-init --append   # install the 'claude --cwq' wrapper`,
+        `  code-with-quran read                  # open a reader pane (tmux split / 2nd terminal)`,
         `Then start sessions with 'claude --cwq' or 'claude --cwq-dgr'.`,
       ]
         .filter((l) => l !== null)
