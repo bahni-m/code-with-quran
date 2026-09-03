@@ -28,7 +28,9 @@ function wrapperSnippet(shell) {
 
 // `open-pane --auto` splits a reader pane when you're in tmux/zellij (autopane
 // defaults to `auto`) and is an instant no-op otherwise; safe to always call.
-const PANE = 'command -v code-with-quran >/dev/null && code-with-quran open-pane --auto 2>/dev/null';
+// stderr is left attached on purpose: the only thing it prints is a one-line
+// note when a split was meant to happen and didn't.
+const PANE = 'command -v code-with-quran >/dev/null && code-with-quran open-pane --auto';
 
 function posixBody() {
   return [
@@ -48,7 +50,7 @@ function fishBody() {
     '    switch "$argv[1]"',
     '        case --cwq --cwq-dgr',
     '            if type -q code-with-quran',
-    '                code-with-quran open-pane --auto 2>/dev/null',
+    '                code-with-quran open-pane --auto',
     '            end',
     `            set -lx ${ENV_VAR} 1`,
     '            if test "$argv[1]" = --cwq-dgr',
