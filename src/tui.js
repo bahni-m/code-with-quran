@@ -18,11 +18,13 @@ const CLEAR = '\x1b[2J\x1b[H';
 /**
  * Run the full-screen reader. Resolves when the user quits.
  * In a non-TTY (piped) context it prints one frame and returns.
+ * @param {{ input?: NodeJS.ReadStream, output?: NodeJS.WriteStream }} [opts]
  */
-function run() {
-  const out = process.stdout;
+function run(opts = {}) {
+  const input = opts.input || process.stdin;
+  const out = opts.output || process.stdout;
 
-  if (!out.isTTY || !process.stdin.isTTY) {
+  if (!out.isTTY || !input.isTTY) {
     const st = loadState();
     out.write(
       render
@@ -101,12 +103,12 @@ function run() {
       clearInterval(hbTimer);
       if (watcher) watcher.close();
       try {
-        process.stdin.setRawMode(false);
+        input.setRawMode(false);
       } catch {
         /* ignore */
       }
-      process.stdin.pause();
-      process.stdin.removeListener('keypress', onKey);
+      input.pause();
+      input.removeListener('keypress', onKey);
       process.removeListener('SIGWINCH', paint);
       process.removeListener('SIGTERM', cleanup);
       heartbeat.clear();
@@ -134,6 +136,7 @@ function run() {
           return move(-1);
         case 'f':
           following = !following;
+          if (following) pos = posFromDisk();
           return paint();
         case 'r':
           pos = posFromDisk();
@@ -146,9 +149,9 @@ function run() {
     }
 
     function promptGoto() {
-      process.stdin.removeListener('keypress', onKey);
+      input.removeListener('keypress', onKey);
       try {
-        process.stdin.setRawMode(false);
+        input.setRawMode(false);
       } catch {
         /* ignore */
       }
@@ -159,7 +162,7 @@ function run() {
           'goto (e.g. 2:255, Al-Kahf) › ' +
           render.ANSI.reset
       );
-      const rl = readline.createInterface({ input: process.stdin, output: out });
+      const rl = readline.createInterface({ input, output: out });
       rl.question('', (answer) => {
         rl.close();
         try {
@@ -171,21 +174,21 @@ function run() {
           /* ignore a bad reference */
         }
         try {
-          process.stdin.setRawMode(true);
+          input.setRawMode(true);
         } catch {
           /* ignore */
         }
-        process.stdin.resume();
-        process.stdin.on('keypress', onKey);
+        input.resume();
+        input.on('keypress', onKey);
         out.write(CURSOR_HIDE);
         paint();
       });
     }
 
-    readline.emitKeypressEvents(process.stdin);
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.on('keypress', onKey);
+    readline.emitKeypressEvents(input);
+    input.setRawMode(true);
+    input.resume();
+    input.on('keypress', onKey);
     process.on('SIGWINCH', paint);
     process.on('SIGTERM', cleanup);
 
