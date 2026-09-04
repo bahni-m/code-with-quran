@@ -13,7 +13,14 @@ const DEFAULTS = Object.freeze({
   cooldownMinutes: 3,
   /** Wrap from 114:6 back to 1:1 instead of stopping at the end. */
   loop: true,
-  /** Where each advance surfaces: tui | browser | both. */
+  /**
+   * Where each advance surfaces: tui | web | browser | both.
+   *   tui      full-screen terminal reader in a second pane
+   *   web      bundled local reader in your browser (RTL always renders right —
+   *            the terminal can't guarantee that under tmux); offline, one tab
+   *   browser  an external site (quran.com etc.) — opens a tab per advance
+   *   both     tui + web
+   */
   surface: 'tui',
   /**
    * Auto-open a reader pane on `claude --cwq`: off | tmux | zellij | auto.
@@ -23,13 +30,14 @@ const DEFAULTS = Object.freeze({
    */
   autopane: 'auto',
   /**
-   * How the terminal reader emits Arabic: visual | logical.
-   * `visual` (default) reshapes and reorders each line so it reads right-to-left
-   * on terminals that don't run the bidi algorithm (tmux, zellij, xterm,
-   * Alacritty, kitty). Set `logical` on a terminal that does its own bidi
-   * (recent Konsole / GNOME Terminal) to avoid a double reversal.
+   * How the terminal reader emits Arabic: logical | visual.
+   * `logical` (default) sends the raw text and lets the terminal shape and
+   * reorder it — correct in terminals that run the bidi algorithm.
+   * `visual` reshapes and reverses each line itself, for a bare terminal with
+   * no bidi at all (plain xterm). Note: under tmux/zellij neither is reliable —
+   * use `surface web` to read in the browser instead.
    */
-  direction: 'visual',
+  direction: 'logical',
   /** Reader website (when surface includes browser): quran.com | tanzil | quranwbw | alquran.cloud */
   source: 'quran.com',
   /** Explicit browser command, e.g. "firefox" or "google-chrome". Empty = OS default. */
@@ -52,9 +60,9 @@ const KEY_TYPES = {
 };
 
 const ENUMS = {
-  surface: ['tui', 'browser', 'both'],
+  surface: ['tui', 'web', 'browser', 'both'],
   autopane: ['off', 'tmux', 'zellij', 'auto'],
-  direction: ['visual', 'logical'],
+  direction: ['logical', 'visual'],
   source: ['quran.com', 'tanzil', 'quranwbw', 'alquran.cloud'],
 };
 

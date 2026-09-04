@@ -26,18 +26,19 @@ function wrapperSnippet(shell) {
   return `${BEGIN}\n# Managed by \`code-with-quran shell-init\`. Edit above/below, not inside.\n${body}\n${END}\n`;
 }
 
-// `open-pane --auto` splits a reader pane when you're in tmux/zellij (autopane
-// defaults to `auto`) and is an instant no-op otherwise; safe to always call.
-// stderr is left attached on purpose: the only thing it prints is a one-line
-// note when a split was meant to happen and didn't.
-const PANE = 'command -v code-with-quran >/dev/null && code-with-quran open-pane --auto';
+// `start` opens whichever reader the `surface` config asks for — a tmux/zellij
+// pane for `tui`, a browser tab for `web`, both for `both` — and is an instant
+// no-op when there's nothing to open or a reader is already up. Safe to always
+// call. stderr is left attached on purpose: it only prints a one-line note when
+// a reader that was meant to open didn't.
+const START = 'command -v code-with-quran >/dev/null && code-with-quran start';
 
 function posixBody() {
   return [
     'claude() {',
     '  case "${1:-}" in',
-    `    --cwq)     shift; ${PANE}; ${ENV_VAR}=1 command claude "$@" ;;`,
-    `    --cwq-dgr) shift; ${PANE}; ${ENV_VAR}=1 command claude --dangerously-skip-permissions "$@" ;;`,
+    `    --cwq)     shift; ${START}; ${ENV_VAR}=1 command claude "$@" ;;`,
+    `    --cwq-dgr) shift; ${START}; ${ENV_VAR}=1 command claude --dangerously-skip-permissions "$@" ;;`,
     '    *)         command claude "$@" ;;',
     '  esac',
     '}',
@@ -50,7 +51,7 @@ function fishBody() {
     '    switch "$argv[1]"',
     '        case --cwq --cwq-dgr',
     '            if type -q code-with-quran',
-    '                code-with-quran open-pane --auto',
+    '                code-with-quran start',
     '            end',
     `            set -lx ${ENV_VAR} 1`,
     '            if test "$argv[1]" = --cwq-dgr',

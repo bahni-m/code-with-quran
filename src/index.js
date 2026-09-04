@@ -6,6 +6,8 @@ const { loadState, saveState, resetState, position } = require('./state');
 const { openUrl } = require('./open');
 const { isSessionActive } = require('./session');
 const readerRegistry = require('./reader-registry');
+const webReader = require('./web-reader');
+const webRegistry = require('./web-registry');
 const qt = require('./quran-text');
 const { toVisual } = require('./arabic');
 
@@ -66,11 +68,16 @@ function open(opts = {}) {
 
   const next = quran.advance(shownFrom, config.ayatPerSession, config.loop);
   const surface = config.surface || 'tui';
-  const usedBrowser = surface === 'browser' || surface === 'both';
+  const usedBrowser = surface === 'browser';
+  const usedWeb = surface === 'web' || surface === 'both';
 
   if (!dryRun) {
     if (usedBrowser) {
       openUrl(url, { browser: config.browser, browserArgs: config.browserArgs });
+    }
+    if (usedWeb) {
+      // no-op when a reader tab is already up; otherwise starts one
+      webReader.ensureServer();
     }
     const entry = {
       at: now.toISOString(),
@@ -93,7 +100,9 @@ function open(opts = {}) {
     opened: true,
     surface,
     usedBrowser,
+    usedWeb,
     readerRunning: readerRegistry.isRunning(),
+    webReader: webRegistry.current(),
     shownFrom,
     nextPosition: next,
     url,
@@ -147,6 +156,7 @@ function status() {
     startedAt: state.startedAt,
     recent: state.history.slice(-5).reverse(),
     reader: readerRegistry.current(),
+    webReader: webRegistry.current(),
     config,
   };
 }

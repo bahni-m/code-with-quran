@@ -80,14 +80,15 @@ function progressBar(percent, width) {
  * @param {{surah:number,ayah:number}} o.position
  * @param {boolean} [o.following]  follow-mode indicator
  * @param {boolean} [o.paused]     activation is off / disabled
- * @param {'visual'|'logical'} [o.direction]  'visual' (default) reshapes and
- *        reorders Arabic for terminals with no bidi; 'logical' emits raw text.
+ * @param {'logical'|'visual'} [o.direction]  'logical' (default) emits raw text
+ *        for the terminal to shape/reorder; 'visual' reshapes and reverses it
+ *        itself, for a bare terminal with no bidi.
  * @returns {string[]}
  */
 function frame(o) {
   const cols = Math.max(24, o.cols || 80);
   const rows = Math.max(10, o.rows || 24);
-  const shape = o.direction === 'logical' ? (s) => s : arabic.toVisual;
+  const shape = o.direction === 'visual' ? arabic.toVisual : (s) => s;
   const pos = quran.clampPosition(o.position);
   const s = quran.surah(pos.surah);
   const contentW = Math.min(cols - 4, 72);

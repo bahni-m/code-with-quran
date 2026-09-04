@@ -61,7 +61,7 @@ test('wrapper snippet: posix shells handle --cwq and --cwq-dgr', () => {
       /--cwq-dgr\)\s+shift;.*CODE_WITH_QURAN=1 command claude --dangerously-skip-permissions "\$@"/
     );
     assert.match(snip, /\*\)\s+command claude "\$@" ;;/); // passthrough
-    assert.match(snip, /code-with-quran open-pane --auto/);
+    assert.match(snip, /code-with-quran start/);
     assert.ok(snip.startsWith(shell.BEGIN));
     assert.ok(snip.trimEnd().endsWith(shell.END));
   }
@@ -73,7 +73,7 @@ test('wrapper snippet: fish variant', () => {
   assert.match(snip, /case --cwq --cwq-dgr/);
   assert.match(snip, /set -lx CODE_WITH_QURAN 1/);
   assert.match(snip, /--dangerously-skip-permissions \$argv\[2\.\.-1\]/);
-  assert.match(snip, /code-with-quran open-pane --auto/);
+  assert.match(snip, /code-with-quran start/);
 });
 
 test('appendSnippet writes, refreshes without duplicating, and backs up', () => {

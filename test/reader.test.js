@@ -96,10 +96,11 @@ test('frame direction: logical emits raw text, visual reshapes it', () => {
   assert.ok(visual.includes('۝١'), 'ayah marker survives reshaping');
 });
 
-test('frame defaults to visual direction', () => {
+test('frame defaults to logical direction (raw text, no reshaping)', () => {
   const word = qt.ayahText(112, 1).split(' ')[0];
   const dflt = render.frame({ cols: 100, rows: 24, position: { surah: 112, ayah: 1 } }).join('\n');
-  assert.ok(!dflt.includes(word));
+  assert.ok(dflt.includes(word), 'the raw source word is present');
+  assert.ok(!/[ﹰ-ﻼ]/.test(dflt), 'no Arabic presentation forms');
 });
 
 test('frame handles tiny terminals and surah boundaries', () => {
@@ -129,18 +130,25 @@ test('reader registry ignores a dead pid', () => {
 
 test('open honours surface config', () => {
   const cwq = require('../src/index');
-  // default: tui, no browser
+  // default: tui, no browser, no web
   let res = cwq.open({ dryRun: true, now: new Date() });
   assert.equal(res.surface, 'tui');
   assert.equal(res.usedBrowser, false);
+  assert.equal(res.usedWeb, false);
 
   cwq.setConfigKey('surface', 'browser');
   res = cwq.open({ dryRun: true, now: new Date() });
   assert.equal(res.usedBrowser, true);
+  assert.equal(res.usedWeb, false);
+
+  cwq.setConfigKey('surface', 'web');
+  res = cwq.open({ dryRun: true, now: new Date() });
+  assert.equal(res.usedBrowser, false);
+  assert.equal(res.usedWeb, true);
 
   cwq.setConfigKey('surface', 'both');
   res = cwq.open({ dryRun: true, now: new Date() });
-  assert.equal(res.usedBrowser, true);
+  assert.equal(res.usedWeb, true);
 
   assert.throws(() => cwq.setConfigKey('surface', 'telepathy'), /one of/);
 });

@@ -18,9 +18,10 @@ time — resuming from wherever you last left off.
 ---
 
 Claude starts working, the ayah in your other pane moves forward, and you read a
-few lines instead of watching a spinner. It stays in the terminal — no browser,
-no context switch. The whole Uthmani text is bundled (~1.3 MB), so the reader is
-instant and works offline.
+few lines instead of watching a spinner. Read it in a terminal pane, or — since a
+terminal grid can't lay out right-to-left Arabic reliably under tmux — in a
+bundled browser page (`config surface web`). The whole Uthmani text ships with
+the tool (~1.3 MB), so either reader is instant and works offline.
 
 ```
                           Al-Baqarah · البقرة · The Cow · Medinan
@@ -51,10 +52,22 @@ Both writers back up the file they touch (`*.bak-<timestamp>`).
 
 ## Using it day to day
 
-**In tmux or zellij?** Nothing to set up — `claude --cwq` splits off a reader
-pane for you. The first session opens it; later sessions reuse the same pane
-(one reader, shared). `code-with-quran status` shows an `Autopane` line telling
-you what it will do. Turn it off with `code-with-quran config autopane off`.
+**Terminal or browser?** The terminal reader is the default. It renders Arabic
+right-to-left correctly in a terminal that runs the bidi algorithm (most modern
+ones) — but **not through tmux or zellij**, which paint text cell-by-cell with no
+bidi. If you live in a multiplexer, switch to the browser reader:
+
+```bash
+code-with-quran config surface web    # a quiet local page, offline, one tab
+```
+
+It uses the same bundled text and follows the same pointer — Arabic just renders
+the way a browser always gets right.
+
+**In tmux or zellij (terminal reader)?** `claude --cwq` splits off a reader pane
+for you. The first session opens it; later sessions reuse the same pane (one
+reader, shared). `code-with-quran status` shows an `Autopane` line. Turn it off
+with `code-with-quran config autopane off`.
 
 **Not in a multiplexer?** Open a reader in a pane you can see — a second
 terminal, an editor terminal tab — and leave it there:
@@ -100,19 +113,24 @@ Config lives in `~/.code-with-quran/config.json`; set values with
 | `cooldownMinutes` | `3` | Minimum gap between advances, so a burst of quick prompts doesn't run you ahead several ayat. |
 | `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
-| `surface` | `tui` | Where an advance shows up: `tui`, `browser`, or `both`. |
+| `surface` | `tui` | Where an advance shows up: `tui` (terminal pane), `web` (bundled browser page), `browser` (an external site), or `both` (tui + web). |
 | `autopane` | `auto` | Auto-open the reader pane on `claude --cwq`: `auto` splits a pane when you're in tmux or zellij, `off` never does, `tmux`/`zellij` pin it to one. |
-| `direction` | `visual` | How Arabic is written to the terminal. `visual` reshapes and reverses each line so it reads right-to-left everywhere — needed under tmux/zellij and in terminals with no bidi (xterm, Alacritty, kitty). Switch to `logical` only if your terminal does its own bidi (recent Konsole / GNOME Terminal) and the text now looks reversed. |
-| `source` | `quran.com` | Browser reader site — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
+| `direction` | `logical` | How the **terminal** reader emits Arabic. `logical` sends raw text for the terminal to shape and reorder (correct wherever bidi works). `visual` reshapes and reverses it itself, for a bare terminal with no bidi at all. Under tmux/zellij neither is reliable — use `surface web`. |
+| `source` | `quran.com` | External site for `surface browser` — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
 | `browser` | `""` | Explicit browser command. Empty = your OS default. |
 | `browserArgs` | `""` | Extra arguments for that command. |
 
-Prefer the browser to a terminal pane?
+Reading surfaces:
 
 ```bash
-code-with-quran config surface browser   # open quran.com on each advance
-code-with-quran config surface both      # reader pane *and* browser
+code-with-quran config surface web       # bundled local page — best for tmux/zellij
+code-with-quran config surface both      # terminal pane *and* the web page
+code-with-quran config surface browser   # an external site (quran.com etc.) per advance
+code-with-quran serve                    # start the web page yourself (prints its URL)
 ```
+
+The web page binds `127.0.0.1` only, opens one tab, polls the pointer, and shuts
+itself down a few minutes after you close the tab.
 
 ## Turn it off
 
@@ -133,7 +151,7 @@ flowchart LR
     C --> D{activated?}
     D -->|yes| E[advance the pointer<br/>once per cooldown]
     D -->|no| F[do nothing]
-    E -.->|file watch| G["code-with-quran read<br/>(your other pane)"]
+    E -.->|state.json watch / poll| G["the reader<br/>(terminal pane or browser page)"]
 ```
 
 Three moving parts:
@@ -141,20 +159,23 @@ Three moving parts:
 1. **The shell wrapper** replaces `claude` with a small function. `claude --cwq`
    sets `CODE_WITH_QURAN=1` for that one invocation and runs the real binary via
    `command claude` — no recursion, and the variable never leaks into your
-   shell. It also runs `code-with-quran open-pane --auto`, which splits off a
-   reader pane when you're in tmux/zellij (`autopane`, default `auto`) and is an
-   instant no-op otherwise. `shell-init` writes a `claude()` function for
-   bash/zsh and a `function claude` for fish; `--shell=…` overrides the `$SHELL`
-   guess.
+   shell. It also runs `code-with-quran start`, which opens whatever your
+   `surface` config asks for — a tmux/zellij pane for `tui`, a browser tab for
+   `web`, both for `both` — and is an instant no-op otherwise. `shell-init`
+   writes a `claude()` function for bash/zsh and a `function claude` for fish;
+   `--shell=…` overrides the `$SHELL` guess.
 2. **The hook** runs `code-with-quran open --quiet --session-only` on every
    `UserPromptSubmit`. `--session-only` makes it a no-op unless that variable is
    set. When it does run it advances the pointer in
    `~/.code-with-quran/state.json` — at most once per `cooldownMinutes` — and by
    default does nothing else (`surface = tui`).
-3. **The reader** (`code-with-quran read`) watches `state.json` and jumps to the
-   new ayah whenever the pointer moves — from the hook, or from another pane.
-   Navigating with `j`/`k`/`g` writes the pointer back, so "where you are" stays
-   consistent no matter what moved it.
+3. **The reader** watches `state.json` and jumps to the new ayah whenever the
+   pointer moves — from the hook, or from another pane. `code-with-quran read`
+   is the terminal reader (navigating with `j`/`k`/`g` writes the pointer back);
+   `code-with-quran serve` is the browser reader — a zero-dependency local HTTP
+   server on `127.0.0.1` that serves the bundled text as one page and polls the
+   pointer. Both are deduped through a heartbeat file: one of each, shared across
+   sessions.
 
 ## Commands
 
@@ -162,8 +183,10 @@ Three moving parts:
 
 | Command | Description |
 | --- | --- |
-| `read` | Full-screen reader pane; follows the pointer |
-| `open-pane` | Split off a reader pane (tmux / zellij) |
+| `read` | Full-screen terminal reader; follows the pointer |
+| `serve` | Browser reader — local page on `127.0.0.1`, RTL always right |
+| `start` | Open the reader(s) for your `surface` (the wrapper runs this) |
+| `open-pane` | Split off a terminal reader pane (tmux / zellij) |
 | `now` | Print the current ayah (Arabic + ref) |
 | `open` *(default)* | Advance the pointer (+ browser if `surface` includes it) |
 | `open --session-only` | No-op unless started via `claude --cwq` (the hook uses this) |
@@ -202,13 +225,14 @@ npm test          # node:test — no network, no browser, no rc files touched
 | --- | --- |
 | `quran.js` | Surah metadata, progression maths (advance/rewind, reference parsing, URLs) |
 | `quran-text.js` | Uthmani text lookup |
-| `arabic.js` | Zero-dep Arabic shaping + visual reordering for terminals with no bidi |
-| `render.js` | Pure frame builder for the reader (width-aware Arabic wrapping) |
-| `tui.js` | The reader loop: raw input, state-file watch, alt-screen |
+| `arabic.js` | Zero-dep Arabic shaping + visual reordering for a bare terminal with no bidi |
+| `render.js` | Pure frame builder for the terminal reader (width-aware Arabic wrapping) |
+| `tui.js` | The terminal reader loop: raw input, state-file watch, alt-screen |
+| `web-reader.js` | The browser reader: local HTTP server + self-contained page |
 | `pane.js` | Split a reader pane in tmux / zellij (deduped) |
 | `state.js` / `config.js` | JSON persistence under `~/.code-with-quran/` |
 | `session.js` | The `CODE_WITH_QURAN` activation gate |
-| `reader-registry.js` | Heartbeat file so `status` knows a reader is running |
+| `reader-registry.js` / `web-registry.js` | Heartbeat files so `status` knows a reader is running |
 | `open.js` | Cross-platform browser launch |
 | `shell.js` | Wrapper generation + rc-file editing |
 | `hook.js` | Claude Code `settings.json` install / uninstall |

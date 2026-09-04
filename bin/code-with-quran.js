@@ -6,6 +6,7 @@ const hook = require('../src/hook');
 const shell = require('../src/shell');
 const tui = require('../src/tui');
 const pane = require('../src/pane');
+const web = require('../src/web-reader');
 const { KEY_TYPES, DEFAULTS, ENUMS } = require('../src/config');
 const { isSessionActive } = require('../src/session');
 
@@ -54,6 +55,10 @@ USAGE
 
 COMMANDS
   read                 Full-screen reader pane; follows the pointer as you work
+  serve                Bundled web reader in the browser — RTL always renders
+                       right (a terminal can't guarantee that under tmux)
+  start                Open the reader(s) for your 'surface' config (the wrapper
+                       runs this on 'claude --cwq')
   open-pane            Split off a reader pane (needs tmux or zellij)
   now                  Print the current ayah (Arabic + ref) — for statuslines
   open                 Advance the pointer (+ open browser if surface=browser)
@@ -81,6 +86,10 @@ OPEN OPTIONS
   --dry-run            Show what would happen; change nothing
   --quiet              Print nothing on success (used by the hook)
   --json               Machine-readable output
+
+SERVE OPTIONS
+  --no-open            Don't open a browser tab (just run the server)
+  --port=N             Preferred port (default 7620; scans upward if taken)
 
 SHELL-INIT OPTIONS
   --shell=bash|zsh|fish   Target shell (default: detected from $SHELL)
@@ -154,8 +163,10 @@ function main() {
       const verb = flags['dry-run'] ? 'Would show' : 'Now showing';
       let note;
       if (res.usedBrowser) note = `  ${res.url}`;
+      else if (res.usedWeb)
+        note = res.webReader ? `  ${res.webReader.url}` : '  (opening the web reader…)';
       else if (res.readerRunning) note = '  (updated your reader pane)';
-      else note = "  (run 'code-with-quran read' in another pane to see it)";
+      else note = "  (run 'code-with-quran read', or 'config surface web' for the browser reader)";
       out(
         flags,
         `${verb} ${from}\n${note}\n  ${bar(res.progress.percent)} ${res.progress.percent}% ` +
@@ -167,6 +178,44 @@ function main() {
 
     case 'read': {
       tui.run().then(() => process.exit(0));
+      return;
+    }
+
+    case 'serve': {
+      web
+        .serve({
+          open: !flags['no-open'],
+          port: flags.port && flags.port !== true ? parseInt(flags.port, 10) : undefined,
+          log: (m) => {
+            if (!flags.quiet) process.stderr.write(`code-with-quran: ${m}\n`);
+          },
+        })
+        .then(() => process.exit(0))
+        .catch((err) => {
+          process.stderr.write(`code-with-quran: web reader failed — ${err.message}\n`);
+          process.exit(1);
+        });
+      return;
+    }
+
+    case 'start': {
+      const cfg = cwq.getConfig();
+      const surface = cfg.surface || 'tui';
+      const res = {};
+      if (surface === 'tui' || surface === 'both') {
+        const p = pane.openPane({ auto: true });
+        res.pane = p;
+        if (!p.spawned && (p.code === 'spawn-failed' || p.code === 'wrong-multiplexer')) {
+          process.stderr.write(
+            `code-with-quran: reader pane not opened — ${p.reason}. ` +
+              `Open one yourself with 'code-with-quran read'.\n`
+          );
+        }
+      }
+      if (surface === 'web' || surface === 'both') {
+        res.web = web.ensureServer();
+      }
+      out(flags, null, res);
       return;
     }
 
@@ -218,6 +267,9 @@ function main() {
       const reader = s.reader
         ? `running (pid ${s.reader.pid})`
         : 'not running — start one with: code-with-quran read';
+      const webReader = s.webReader
+        ? `running — ${s.webReader.url}`
+        : "not running — start one with: code-with-quran serve";
       const mux = pane.detectMultiplexer();
       const autopane = s.config.autopane;
       let autopaneNote;
@@ -230,15 +282,17 @@ function main() {
       } else {
         autopaneNote = `  (${mux} — pane opens on 'claude --cwq')`;
       }
+      const showWeb = s.config.surface === 'web' || s.config.surface === 'both' || s.webReader;
       const lines = [
         `Activation ${active ? 'ON  (this session was started with --cwq)' : 'OFF (plain claude — hook is a no-op)'}`,
         `Reader     ${reader}`,
+        ...(showWeb ? [`Web reader ${webReader}`] : []),
         `Position   ${s.label}  (${s.surah.meaning})`,
         `Progress   ${bar(s.progress.percent)} ${s.progress.percent}%  ${s.progress.index}/${s.progress.total} ayat`,
         `Advances   ${s.opens}  (total ${s.totalOpened})`,
         `Last       ${s.lastOpenedAt || '—'}`,
         `Started    ${s.startedAt || '—'}`,
-        `Surface    ${s.config.surface}${s.config.surface !== 'tui' ? `  (source ${s.config.source})` : ''}`,
+        `Surface    ${s.config.surface}${s.config.surface === 'browser' ? `  (source ${s.config.source})` : ''}`,
         `Autopane   ${autopane}${autopaneNote}`,
         `Enabled    ${s.config.enabled}   ayatPerSession=${s.config.ayatPerSession}   cooldown=${s.config.cooldownMinutes}m   loop=${s.config.loop}`,
       ];
