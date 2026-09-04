@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { EventEmitter } = require('events');
 
 const render = require('../src/render');
 const qt = require('../src/quran-text');
@@ -177,4 +178,38 @@ test('tui.run() prints one frame and resolves when not a TTY', async () => {
     process.stdout.write = orig;
   }
   assert.match(chunks.join(''), /code-with-quran/);
+});
+
+test('tui.run() catches up to the latest position when follow mode resumes', async () => {
+  const tui = require('../src/tui');
+  const { saveState } = require('../src/state');
+  const input = new EventEmitter();
+  const writes = [];
+  input.isTTY = true;
+  input.setRawMode = () => {};
+  input.resume = () => {};
+  input.pause = () => {};
+  const output = {
+    isTTY: true,
+    columns: 100,
+    rows: 24,
+    write(chunk) {
+      writes.push(String(chunk));
+      return true;
+    },
+  };
+
+  const running = tui.run({ input, output });
+  try {
+    input.emit('keypress', 'f', { name: 'f' });
+    saveState({ surah: 2, ayah: 255 });
+    input.emit('keypress', 'f', { name: 'f' });
+
+    const resumedFrame = writes.at(-1) || '';
+    assert.match(resumedFrame, /Al-Baqarah/);
+    assert.match(resumedFrame, /۝٢٥٥/);
+  } finally {
+    input.emit('keypress', 'q', { name: 'q' });
+    await running;
+  }
 });
