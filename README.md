@@ -4,9 +4,9 @@
 
 **Read the Qur'an while Claude Code works.**
 
-Keep a reader pane open next to your session. Start Claude with `claude --cwq`
-and, as you work, the reader walks forward through the Qur'an an ayah at a
-time — resuming from wherever you last left off.
+Start a session with `claude --cwq` and a reader beside it walks forward through
+the Qur'an — one ayah per prompt, resuming from wherever you left off. Read it in
+a terminal pane or a browser tab.
 
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)
@@ -18,9 +18,8 @@ time — resuming from wherever you last left off.
 ---
 
 Claude starts working, the ayah in your other pane moves forward, and you read a
-few lines instead of watching a spinner. Read it in a terminal pane or a bundled
-browser page. The whole Uthmani text ships with the tool (~1.3 MB), so either
-reader is instant and works offline.
+few lines instead of watching a spinner. The whole Uthmani text ships with the
+tool (Tanzil Project, ~1.3 MB), so the reader is instant and works offline.
 
 ```
                           Al-Baqarah · البقرة · The Cow · Medinan
@@ -33,128 +32,134 @@ reader is instant and works offline.
                    j/k move · g goto · f follow · r reload · q quit
 ```
 
-## Install
+## Quickstart
 
 Node.js ≥ 18. No runtime dependencies.
 
 ```bash
 git clone https://github.com/bahni-m/code-with-quran.git
 cd code-with-quran
-npm link                              # code-with-quran + cwq onto your PATH
+npm link                              # puts `code-with-quran` (and `cwq`) on your PATH
 
 code-with-quran shell-init --append   # add the `claude --cwq` wrapper to your shell
 code-with-quran install               # add the Claude Code hook
-source ~/.bashrc                       # or ~/.zshrc, or restart your shell
+source ~/.bashrc                       # or ~/.zshrc — or open a new shell
+```
+
+Now start Claude through the wrapper:
+
+```bash
+claude --cwq            # the reader follows this session
 ```
 
 Both writers back up the file they touch (`*.bak-<timestamp>`).
 
-## Using it day to day
+## Reading it
 
-**Pick a surface.** The terminal reader is the default. The browser reader is a
-`code-with-quran config surface web` away — a quiet local page that follows the
-same pointer — and is the right choice under tmux or zellij (see
-[Right-to-left Arabic in the terminal](#right-to-left-arabic-in-the-terminal)).
+Two readers — same text, same pointer, same keys. Pick whichever you'll actually
+look at:
 
-**Terminal reader in tmux or zellij?** `claude --cwq` splits off the reader pane
-for you. The first session opens it; later sessions reuse the same pane (one
-reader, shared). `code-with-quran status` shows an `Autopane` line. Turn it off
-with `code-with-quran config autopane off`.
+- **Browser** — a quiet local page. The safe choice: right-to-left Arabic always
+  renders correctly. Turn it on with `code-with-quran config surface web`, or for
+  a single session start with `claude --cwq-browser`.
+- **Terminal** — a full-screen pane (the default). Good in a terminal that lays
+  out right-to-left text — but **not through tmux or zellij**
+  ([why](#if-the-arabic-looks-scrambled)). Inside tmux/zellij, `claude --cwq`
+  splits the pane for you; otherwise open one yourself in a spare pane:
 
-**Terminal reader, no multiplexer?** Open one in a pane you can see — a second
-terminal, an editor terminal tab — and leave it there:
+  ```bash
+  code-with-quran read
+  ```
 
-```bash
-code-with-quran read
-```
-
-Then start your Claude sessions through the wrapper:
+### Starting a session
 
 | Command | What happens |
 | --- | --- |
-| `claude --cwq` | the reader follows this session — each prompt moves it forward one ayah |
-| `claude --cwq-dgr` | same, plus `--dangerously-skip-permissions` |
-| `claude --cwq-browser` | same as `--cwq`, but read in the browser this session (no config change) |
-| `claude --cwq-dgr-browser` | `--cwq-dgr` + browser |
-| `claude` | the reader stays put; move it yourself with the keys below |
+| `claude --cwq` | the reader follows this session — one ayah per prompt |
+| `claude --cwq-browser` | same, but read in the browser this session (no config change) |
+| `claude --cwq-dgr` · `claude --cwq-dgr-browser` | as above, plus `--dangerously-skip-permissions` |
+| `claude` | untouched — the reader stays where it is |
 
 The `--cwq…` flag must come first, before any other argument.
 
-The reader assumes you read what it showed you, so the pointer only drifts if
-you skim. Steer it any time — **the same keys in the terminal reader and the
-browser page**:
+### Keys
+
+The reader assumes you read what it showed you, so the pointer only drifts if you
+skim. Steer it any time — **the same keys in the terminal reader and the browser
+page**:
 
 | Key | Action |
 | --- | --- |
 | `j` / `→` / `space` | next ayah |
 | `k` / `←` | previous ayah |
-| `g` | go to a reference (`2:255`, `Al-Kahf`, `baqarah 255`) |
-| `f` | toggle follow-mode (jump when the hook advances) |
+| `g` | jump to a reference (`2:255`, `Al-Kahf`, `baqarah 255`) |
+| `f` | follow on/off (whether the view jumps when Claude advances) |
 | `r` | reload from disk |
-| `q` / `Esc` | quit (the browser tab may need a manual close) |
+| `q` / `Esc` | quit (a browser tab may need a manual close) |
 
-Away from the reader: `code-with-quran set 2:255` to reposition,
-`code-with-quran now` to print the current ayah (handy in a tmux status line),
-`code-with-quran status` for progress and activation state.
+### From anywhere
 
-## Make it yours
+```bash
+code-with-quran status          # progress, which readers are up, activation state
+code-with-quran set 2:255       # move the pointer
+code-with-quran now             # print the current ayah (handy in a tmux status line)
+```
+
+## Settings
 
 Config lives in `~/.code-with-quran/config.json`; set values with
 `code-with-quran config <key> <value>`.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `surface` | `tui` | Where an advance shows up: `tui` (terminal pane), `web` (bundled browser page), `browser` (an external site), or `both` (tui + web). |
 | `ayatPerSession` | `1` | Ayat to advance per prompt. |
 | `cooldownMinutes` | `0` | Minimum minutes between advances. `0` means every prompt advances. Raise it if quick bursts of prompts run you ahead of what you've read. |
 | `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
-| `surface` | `tui` | Where an advance shows up: `tui` (terminal pane), `web` (bundled browser page), `browser` (an external site), or `both` (tui + web). |
-| `autopane` | `auto` | Auto-open the reader pane on `claude --cwq`: `auto` splits a pane when you're in tmux or zellij, `off` never does, `tmux`/`zellij` pin it to one. |
-| `direction` | `logical` | How the **terminal** reader emits Arabic. `logical` sends raw text for the terminal to shape and reorder; `visual` reshapes and reverses it in code for a bare terminal with no bidi. See [Right-to-left Arabic in the terminal](#right-to-left-arabic-in-the-terminal). |
+| `autopane` | `auto` | Auto-open the terminal reader pane on `claude --cwq`: `auto` splits a pane when you're in tmux or zellij, `off` never does, `tmux`/`zellij` pin it to one. |
+| `direction` | `logical` | How the **terminal** reader emits Arabic. `logical` sends raw text for the terminal to shape and reorder; `visual` reshapes and reverses it in code for a bare terminal with no bidi. See [If the Arabic looks scrambled](#if-the-arabic-looks-scrambled). |
 | `source` | `quran.com` | External site for `surface browser` — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
 | `browser` | `""` | Explicit browser command. Empty = your OS default. |
 | `browserArgs` | `""` | Extra arguments for that command. |
 
-Reading surfaces:
-
 ```bash
-code-with-quran config surface web       # bundled local page — best for tmux/zellij
-code-with-quran config surface both      # terminal pane *and* the web page
-code-with-quran config surface browser   # an external site (quran.com etc.) per advance
-code-with-quran serve                    # start the web page yourself (prints its URL)
+code-with-quran config surface web       # browser reader — best under tmux/zellij
+code-with-quran config surface both      # terminal pane *and* the browser page
+code-with-quran config surface browser   # an external site (quran.com etc.), a tab per advance
 ```
 
-The web page binds `127.0.0.1` only, opens one tab, polls the pointer, and shuts
-itself down a few minutes after you close the tab.
+The browser page binds `127.0.0.1` only, opens one tab, follows the pointer, and
+shuts itself down a few minutes after you close the tab.
 
-## Right-to-left Arabic in the terminal
+## If the Arabic looks scrambled
 
-A terminal grid can't lay out right-to-left Arabic reliably, and **tmux and
-zellij make it worse**: they paint text cell by cell with no bidi algorithm, so
-the terminal underneath never gets to reorder a whole line. Depending on your
-terminal you'll see words in left-to-right order, the ayah-end marker on the
-wrong side, or — with `direction: visual` — half-reversed text.
+You're almost certainly reading in a terminal, under tmux or zellij. A terminal
+grid can't lay out right-to-left Arabic reliably, and **tmux and zellij make it
+worse**: they paint text cell by cell with no bidi algorithm, so the terminal
+underneath never gets to reorder a whole line. You'll see words in left-to-right
+order, the ayah-end marker on the wrong side, or — with `direction: visual` —
+half-reversed text.
 
-The fix is not to fight it. Use the browser reader — persistently:
+Don't fight it. Read in the browser:
 
 ```bash
-code-with-quran config surface web
+code-with-quran config surface web       # persistent
+claude --cwq-browser                     # or just this session
 ```
 
-…or for one session, without touching config: `claude --cwq-browser` (and
-`claude --cwq-dgr-browser`). Either way it renders the same text the way a
-browser always gets right, follows the same pointer, and takes the same keys.
+Same text, same pointer, same keys — rendered the way a browser always gets
+right.
 
-The terminal reader (`surface tui`) is fine **outside** a multiplexer, in a
-terminal that runs the bidi algorithm itself — most modern ones do
-(`direction: logical`, the default). `direction: visual` reshapes and reverses
-each line in code for a bare terminal with no bidi at all, like plain xterm; it
-is not a tmux workaround.
+The terminal reader is fine **outside** a multiplexer, in a terminal that runs
+the bidi algorithm itself — most modern ones do (`direction: logical`, the
+default). `direction: visual` reshapes and reverses each line in code for a bare
+terminal with no bidi at all, like plain xterm; it is not a tmux workaround.
 
-## Turn it off
+## Uninstalling
 
 ```bash
-code-with-quran config enabled false   # pause advancing, keep everything installed
+code-with-quran config enabled false   # just pause advancing, keep everything installed
 code-with-quran uninstall               # remove the Claude Code hook
 code-with-quran shell-init --remove      # remove the shell wrapper
 ```
@@ -198,7 +203,7 @@ Three moving parts:
    pointer. Both are deduped through a heartbeat file: one of each, shared across
    sessions.
 
-## Commands
+## Command reference
 
 `cwq` is a short alias. `--json` on any command gives machine-readable output.
 
