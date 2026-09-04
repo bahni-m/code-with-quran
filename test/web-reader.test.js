@@ -23,17 +23,18 @@ test.afterEach(() => {
 
 const setPos = (surah, ayah) => require('../src/state').saveState({ surah, ayah });
 
-function get(port, urlPath) {
+function req(port, method, urlPath, headers = {}) {
   return new Promise((resolve, reject) => {
-    http
-      .get({ host: '127.0.0.1', port, path: urlPath }, (res) => {
-        let body = '';
-        res.on('data', (c) => (body += c));
-        res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
-      })
-      .on('error', reject);
+    const r = http.request({ host: '127.0.0.1', port, path: urlPath, method, headers }, (res) => {
+      let body = '';
+      res.on('data', (c) => (body += c));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
+    });
+    r.on('error', reject);
+    r.end();
   });
 }
+const get = (port, urlPath) => req(port, 'GET', urlPath);
 
 async function waitFor(fn, ms = 2000) {
   const start = Date.now();
@@ -110,6 +111,53 @@ test('createServer serves the page and a live frame', async () => {
     assert.equal(api2.ref, '112:3');
 
     assert.equal((await get(port, '/nope')).status, 404);
+  } finally {
+    server.close();
+  }
+});
+
+test('move / goto write the pointer', () => {
+  const { loadState } = require('../src/state');
+  setPos(2, 100);
+  assert.deepEqual(web.move(5), { surah: 2, ayah: 105 });
+  assert.equal(loadState().ayah, 105); // persisted
+  assert.deepEqual(web.move(-10), { surah: 2, ayah: 95 });
+  assert.deepEqual(web.goto('Al-Kahf'), { surah: 18, ayah: 1 });
+  assert.deepEqual(web.goto('2:255'), { surah: 2, ayah: 255 });
+  assert.equal(loadState().surah, 2);
+  assert.throws(() => web.goto('Nowhere'), /Unknown surah/);
+});
+
+test('POST /api/move and /api/goto navigate; cross-origin writes are refused', async () => {
+  setPos(2, 255);
+  const server = web.createServer();
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  try {
+    let d = JSON.parse((await req(port, 'POST', '/api/move?d=1')).body);
+    assert.equal(d.ref, '2:256');
+    d = JSON.parse((await req(port, 'POST', '/api/move?d=-2')).body);
+    assert.equal(d.ref, '2:254');
+    d = JSON.parse((await req(port, 'POST', '/api/goto?ref=' + encodeURIComponent('Al-Kahf'))).body);
+    assert.equal(d.ref, '18:1');
+
+    // same-origin header is fine
+    assert.equal(
+      (await req(port, 'POST', '/api/move?d=1', { origin: `http://127.0.0.1:${port}` })).status,
+      200
+    );
+    // a stray site is not
+    assert.equal(
+      (await req(port, 'POST', '/api/move?d=1', { origin: 'https://evil.example' })).status,
+      403
+    );
+    // bad reference -> 400, pointer unchanged
+    const before = JSON.parse((await get(port, '/api/frame')).body).ref;
+    assert.equal((await req(port, 'POST', '/api/goto?ref=Nowhere')).status, 400);
+    assert.equal(JSON.parse((await get(port, '/api/frame')).body).ref, before);
+
+    // GET is never a write path
+    assert.equal((await get(port, '/api/move?d=1')).status, 404);
   } finally {
     server.close();
   }

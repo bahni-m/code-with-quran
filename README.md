@@ -72,14 +72,17 @@ Then start your Claude sessions through the wrapper:
 
 | Command | What happens |
 | --- | --- |
-| `claude --cwq` | the reader follows this session — each prompt nudges it forward (at most once every few minutes) |
+| `claude --cwq` | the reader follows this session — each prompt moves it forward one ayah |
 | `claude --cwq-dgr` | same, plus `--dangerously-skip-permissions` |
+| `claude --cwq-browser` | same as `--cwq`, but read in the browser this session (no config change) |
+| `claude --cwq-dgr-browser` | `--cwq-dgr` + browser |
 | `claude` | the reader stays put; move it yourself with the keys below |
 
-`--cwq` / `--cwq-dgr` must come first, before any other argument.
+The `--cwq…` flag must come first, before any other argument.
 
 The reader assumes you read what it showed you, so the pointer only drifts if
-you skim. Steer it any time:
+you skim. Steer it any time — **the same keys in the terminal reader and the
+browser page**:
 
 | Key | Action |
 | --- | --- |
@@ -88,7 +91,7 @@ you skim. Steer it any time:
 | `g` | go to a reference (`2:255`, `Al-Kahf`, `baqarah 255`) |
 | `f` | toggle follow-mode (jump when the hook advances) |
 | `r` | reload from disk |
-| `q` / `Esc` | quit |
+| `q` / `Esc` | quit (the browser tab may need a manual close) |
 
 Away from the reader: `code-with-quran set 2:255` to reposition,
 `code-with-quran now` to print the current ayah (handy in a tmux status line),
@@ -102,7 +105,7 @@ Config lives in `~/.code-with-quran/config.json`; set values with
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `ayatPerSession` | `1` | Ayat to advance per prompt. |
-| `cooldownMinutes` | `3` | Minimum gap between advances, so a burst of quick prompts doesn't run you ahead several ayat. |
+| `cooldownMinutes` | `0` | Minimum minutes between advances. `0` means every prompt advances. Raise it if quick bursts of prompts run you ahead of what you've read. |
 | `loop` | `true` | Wrap `114:6 → 1:1` instead of stopping at the end. |
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
 | `surface` | `tui` | Where an advance shows up: `tui` (terminal pane), `web` (bundled browser page), `browser` (an external site), or `both` (tui + web). |
@@ -132,14 +135,15 @@ the terminal underneath never gets to reorder a whole line. Depending on your
 terminal you'll see words in left-to-right order, the ayah-end marker on the
 wrong side, or — with `direction: visual` — half-reversed text.
 
-The fix is not to fight it. Use the browser reader:
+The fix is not to fight it. Use the browser reader — persistently:
 
 ```bash
 code-with-quran config surface web
 ```
 
-It renders the same text the way a browser always gets right, and follows the
-same pointer.
+…or for one session, without touching config: `claude --cwq-browser` (and
+`claude --cwq-dgr-browser`). Either way it renders the same text the way a
+browser always gets right, follows the same pointer, and takes the same keys.
 
 The terminal reader (`surface tui`) is fine **outside** a multiplexer, in a
 terminal that runs the bidi algorithm itself — most modern ones do
@@ -164,7 +168,7 @@ flowchart LR
     A["claude --cwq"] -->|exports CODE_WITH_QURAN=1| B[Claude Code session]
     B -->|on each prompt| C[UserPromptSubmit hook]
     C --> D{activated?}
-    D -->|yes| E[advance the pointer<br/>once per cooldown]
+    D -->|yes| E[advance the pointer<br/>one ayah]
     D -->|no| F[do nothing]
     E -.->|state.json watch / poll| G["the reader<br/>(terminal pane or browser page)"]
 ```
@@ -174,16 +178,18 @@ Three moving parts:
 1. **The shell wrapper** replaces `claude` with a small function. `claude --cwq`
    sets `CODE_WITH_QURAN=1` for that one invocation and runs the real binary via
    `command claude` — no recursion, and the variable never leaks into your
-   shell. It also runs `code-with-quran start`, which opens whatever your
-   `surface` config asks for — a tmux/zellij pane for `tui`, a browser tab for
-   `web`, both for `both` — and is an instant no-op otherwise. `shell-init`
-   writes a `claude()` function for bash/zsh and a `function claude` for fish;
-   `--shell=…` overrides the `$SHELL` guess.
+   shell. `--cwq-browser` additionally sets `CODE_WITH_QURAN_SURFACE=web` so that
+   one session reads in the browser. It also runs `code-with-quran start`, which
+   opens whatever the surface asks for — a tmux/zellij pane for `tui`, a browser
+   tab for `web`, both for `both` — and is an instant no-op otherwise.
+   `shell-init` writes a `claude()` function for bash/zsh and a `function claude`
+   for fish; `--shell=…` overrides the `$SHELL` guess.
 2. **The hook** runs `code-with-quran open --quiet --session-only` on every
    `UserPromptSubmit`. `--session-only` makes it a no-op unless that variable is
    set. When it does run it advances the pointer in
-   `~/.code-with-quran/state.json` — at most once per `cooldownMinutes` — and by
-   default does nothing else (`surface = tui`).
+   `~/.code-with-quran/state.json` — once per prompt, or once per
+   `cooldownMinutes` if you set one — and by default does nothing else
+   (`surface = tui`).
 3. **The reader** watches `state.json` and jumps to the new ayah whenever the
    pointer moves — from the hook, or from another pane. `code-with-quran read`
    is the terminal reader (navigating with `j`/`k`/`g` writes the pointer back);

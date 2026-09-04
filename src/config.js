@@ -3,14 +3,19 @@
 const fs = require('fs');
 const path = require('path');
 const { configPath } = require('./paths');
+const { SURFACE_ENV_VAR } = require('./session');
 
 const DEFAULTS = Object.freeze({
   /** Master switch. When false, `open` does nothing. */
   enabled: true,
   /** How many ayat to move the pointer forward on each open. */
   ayatPerSession: 1,
-  /** Minimum minutes between two opens (rapid prompts won't spam tabs). */
-  cooldownMinutes: 3,
+  /**
+   * Minimum minutes between two advances. `0` (default) means every prompt
+   * advances one ayah. Raise it if quick bursts of prompts run you ahead of
+   * what you've actually read.
+   */
+  cooldownMinutes: 0,
   /** Wrap from 114:6 back to 1:1 instead of stopping at the end. */
   loop: true,
   /**
@@ -99,6 +104,21 @@ function sanitise(obj) {
 }
 
 /**
+ * Per-session surface override from the shell wrapper (`claude --cwq-browser`
+ * exports CODE_WITH_QURAN_SURFACE=web). Returns a valid surface or null.
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function surfaceOverride(env = process.env) {
+  const v = env[SURFACE_ENV_VAR];
+  return v && ENUMS.surface.includes(v) ? v : null;
+}
+
+/** The surface that should actually be used right now: session override, else config. */
+function effectiveSurface(config, env = process.env) {
+  return surfaceOverride(env) || (config && config.surface) || 'tui';
+}
+
+/**
  * Coerce a string value (from the CLI) into the type a config key expects.
  * @param {string} key
  * @param {string} value
@@ -122,4 +142,13 @@ function coerceValue(key, value) {
   return value;
 }
 
-module.exports = { DEFAULTS, KEY_TYPES, ENUMS, loadConfig, saveConfig, coerceValue };
+module.exports = {
+  DEFAULTS,
+  KEY_TYPES,
+  ENUMS,
+  loadConfig,
+  saveConfig,
+  coerceValue,
+  surfaceOverride,
+  effectiveSurface,
+};

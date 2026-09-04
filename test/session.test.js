@@ -20,6 +20,7 @@ test.afterEach(() => {
   } catch {}
   delete process.env.CODE_WITH_QURAN_HOME;
   delete process.env.CODE_WITH_QURAN;
+  delete process.env.CODE_WITH_QURAN_SURFACE;
 });
 
 test('isSessionActive reads the env var', () => {
@@ -51,6 +52,22 @@ test('open without sessionOnly ignores the gate', () => {
   assert.equal(res.opened, true);
 });
 
+test('CODE_WITH_QURAN_SURFACE overrides the config surface for the session', () => {
+  const cwq = require('../src/index');
+  const { effectiveSurface, surfaceOverride } = require('../src/config');
+  assert.equal(surfaceOverride({}), null);
+  assert.equal(effectiveSurface({ surface: 'tui' }, {}), 'tui');
+
+  process.env.CODE_WITH_QURAN_SURFACE = 'web';
+  assert.equal(effectiveSurface({ surface: 'tui' }), 'web');
+  const res = cwq.open({ dryRun: true, now: new Date() });
+  assert.equal(res.surface, 'web');
+  assert.equal(res.usedWeb, true);
+
+  process.env.CODE_WITH_QURAN_SURFACE = 'bogus'; // not a valid surface — ignored
+  assert.equal(effectiveSurface({ surface: 'tui' }), 'tui');
+});
+
 test('wrapper snippet: posix shells handle --cwq and --cwq-dgr', () => {
   for (const sh of ['bash', 'zsh']) {
     const snip = shell.wrapperSnippet(sh);
@@ -67,13 +84,31 @@ test('wrapper snippet: posix shells handle --cwq and --cwq-dgr', () => {
   }
 });
 
+test('wrapper snippet: posix --cwq-browser variants pin the web surface', () => {
+  for (const sh of ['bash', 'zsh']) {
+    const snip = shell.wrapperSnippet(sh);
+    assert.match(
+      snip,
+      /--cwq-browser\)\s+shift;.*start --surface=web;.*CODE_WITH_QURAN=1 CODE_WITH_QURAN_SURFACE=web command claude "\$@"/
+    );
+    assert.match(
+      snip,
+      /--cwq-dgr-browser\)\s+shift;.*CODE_WITH_QURAN_SURFACE=web command claude --dangerously-skip-permissions "\$@"/
+    );
+  }
+});
+
 test('wrapper snippet: fish variant', () => {
   const snip = shell.wrapperSnippet('fish');
   assert.match(snip, /function claude/);
-  assert.match(snip, /case --cwq --cwq-dgr/);
+  assert.match(snip, /case --cwq\b/);
+  assert.match(snip, /case --cwq-dgr\b/);
+  assert.match(snip, /case --cwq-browser\b/);
+  assert.match(snip, /case --cwq-dgr-browser\b/);
   assert.match(snip, /set -lx CODE_WITH_QURAN 1/);
+  assert.match(snip, /set -lx CODE_WITH_QURAN_SURFACE web/);
+  assert.match(snip, /code-with-quran start --surface=web/);
   assert.match(snip, /--dangerously-skip-permissions \$argv\[2\.\.-1\]/);
-  assert.match(snip, /code-with-quran start/);
 });
 
 test('appendSnippet writes, refreshes without duplicating, and backs up', () => {

@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { ENV_VAR } = require('./session');
+const { ENV_VAR, SURFACE_ENV_VAR } = require('./session');
 
 const BEGIN = '# >>> code-with-quran >>>';
 const END = '# <<< code-with-quran <<<';
@@ -13,9 +13,11 @@ const SUPPORTED_SHELLS = ['bash', 'zsh', 'fish'];
 /**
  * The shell wrapper that activates code-with-quran for a session.
  *
- * `claude --cwq`      -> exports CODE_WITH_QURAN=1, runs the real claude
- * `claude --cwq-dgr`  -> same, plus --dangerously-skip-permissions
- * anything else        -> the real claude, untouched
+ * `claude --cwq`              -> exports CODE_WITH_QURAN=1, runs the real claude
+ * `claude --cwq-dgr`          -> same, plus --dangerously-skip-permissions
+ * `claude --cwq-browser`      -> same as --cwq, reading in the browser this session
+ * `claude --cwq-dgr-browser`  -> --cwq-dgr + browser
+ * anything else                -> the real claude, untouched
  *
  * @param {'bash'|'zsh'|'fish'} shell
  * @returns {string} snippet including BEGIN/END markers, newline-terminated
@@ -26,20 +28,23 @@ function wrapperSnippet(shell) {
   return `${BEGIN}\n# Managed by \`code-with-quran shell-init\`. Edit above/below, not inside.\n${body}\n${END}\n`;
 }
 
-// `start` opens whichever reader the `surface` config asks for — a tmux/zellij
-// pane for `tui`, a browser tab for `web`, both for `both` — and is an instant
-// no-op when there's nothing to open or a reader is already up. Safe to always
-// call. stderr is left attached on purpose: it only prints a one-line note when
-// a reader that was meant to open didn't.
+// `start` opens whichever reader the surface asks for — a tmux/zellij pane for
+// `tui`, a browser tab for `web`, both for `both` — and is an instant no-op when
+// there's nothing to open or a reader is already up. Safe to always call. stderr
+// is left attached on purpose: it only prints a one-line note when a reader that
+// was meant to open didn't. `--surface=web` pins it for the `*-browser` variants.
 const START = 'command -v code-with-quran >/dev/null && code-with-quran start';
+const START_WEB = `${START} --surface=web`;
 
 function posixBody() {
   return [
     'claude() {',
     '  case "${1:-}" in',
-    `    --cwq)     shift; ${START}; ${ENV_VAR}=1 command claude "$@" ;;`,
-    `    --cwq-dgr) shift; ${START}; ${ENV_VAR}=1 command claude --dangerously-skip-permissions "$@" ;;`,
-    '    *)         command claude "$@" ;;',
+    `    --cwq)             shift; ${START}; ${ENV_VAR}=1 command claude "$@" ;;`,
+    `    --cwq-dgr)         shift; ${START}; ${ENV_VAR}=1 command claude --dangerously-skip-permissions "$@" ;;`,
+    `    --cwq-browser)     shift; ${START_WEB}; ${ENV_VAR}=1 ${SURFACE_ENV_VAR}=web command claude "$@" ;;`,
+    `    --cwq-dgr-browser) shift; ${START_WEB}; ${ENV_VAR}=1 ${SURFACE_ENV_VAR}=web command claude --dangerously-skip-permissions "$@" ;;`,
+    '    *)                 command claude "$@" ;;',
     '  esac',
     '}',
   ].join('\n');
@@ -48,19 +53,33 @@ function posixBody() {
 function fishBody() {
   return [
     'function claude',
+    '    set -l cwq_dgr 0',
+    '    set -l cwq_web 0',
     '    switch "$argv[1]"',
-    '        case --cwq --cwq-dgr',
-    '            if type -q code-with-quran',
-    '                code-with-quran start',
-    '            end',
-    `            set -lx ${ENV_VAR} 1`,
-    '            if test "$argv[1]" = --cwq-dgr',
-    '                command claude --dangerously-skip-permissions $argv[2..-1]',
-    '            else',
-    '                command claude $argv[2..-1]',
-    '            end',
+    '        case --cwq',
+    '        case --cwq-dgr',
+    '            set cwq_dgr 1',
+    '        case --cwq-browser',
+    '            set cwq_web 1',
+    '        case --cwq-dgr-browser',
+    '            set cwq_dgr 1; set cwq_web 1',
     "        case '*'",
     '            command claude $argv',
+    '            return',
+    '    end',
+    '    if type -q code-with-quran',
+    '        if test $cwq_web = 1',
+    '            code-with-quran start --surface=web',
+    '        else',
+    '            code-with-quran start',
+    '        end',
+    '    end',
+    `    set -lx ${ENV_VAR} 1`,
+    `    test $cwq_web = 1; and set -lx ${SURFACE_ENV_VAR} web`,
+    '    if test $cwq_dgr = 1',
+    '        command claude --dangerously-skip-permissions $argv[2..-1]',
+    '    else',
+    '        command claude $argv[2..-1]',
     '    end',
     'end',
   ].join('\n');

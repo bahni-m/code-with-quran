@@ -6,7 +6,8 @@ const path = require('path');
 
 const quran = require('./quran');
 const qt = require('./quran-text');
-const { loadState, position } = require('./state');
+const { loadState, saveState, position } = require('./state');
+const { loadConfig } = require('./config');
 const { openUrl } = require('./open');
 const registry = require('./web-registry');
 
@@ -50,6 +51,29 @@ function collectAyat(pos, span) {
     });
   }
   return ayat;
+}
+
+/** Move the pointer by `delta` ayat (the page's j/k). Returns the new position. */
+function move(delta) {
+  const st = loadState();
+  const from = position(st);
+  const step = Math.trunc(Number(delta)) || 0;
+  const to =
+    step === 0
+      ? from
+      : step > 0
+        ? quran.advance(from, step, loadConfig().loop)
+        : quran.rewind(from, -step, loadConfig().loop);
+  saveState({ ...st, surah: to.surah, ayah: to.ayah });
+  return to;
+}
+
+/** Jump the pointer to a reference like "2:255" or "Al-Kahf" (the page's g). */
+function goto(ref) {
+  const to = quran.parseReference(ref);
+  const st = loadState();
+  saveState({ ...st, surah: to.surah, ayah: to.ayah });
+  return to;
 }
 
 /**
@@ -132,6 +156,10 @@ const PAGE = `<!doctype html>
   .meter { height: 3px; background: var(--rule); border-radius: 3px; overflow: hidden; margin: .8rem auto 0; max-width: 260px; }
   .meter > i { display: block; height: 100%; background: var(--accent); transition: width .5s; }
   .count { margin-top: .55rem; }
+  .keys { margin-top: .5rem; opacity: .8; }
+  .keys b { color: var(--accent); font-weight: 600; }
+  #follow { color: var(--accent); }
+  #follow.off { color: var(--dim); }
   #wrap.stale { opacity: .4; }
 </style>
 </head>
@@ -141,13 +169,14 @@ const PAGE = `<!doctype html>
   <div id="basmalah" class="basmalah" hidden></div>
   <div id="ayat"></div>
   <footer>
-    <div>follows your Claude Code session — each prompt moves one ayah</div>
+    <div><span id="follow">● following</span> — each prompt moves one ayah</div>
     <div class="meter"><i id="bar"></i></div>
     <div class="count" id="count"></div>
+    <div class="keys"><b>j</b>/<b>k</b> move · <b>g</b> goto · <b>f</b> follow · <b>r</b> reload · <b>q</b> quit</div>
   </footer>
 </div>
 <script>
-  var lastRef = null, missed = 0;
+  var lastRef = null, missed = 0, following = true;
   var $ = function (id) { return document.getElementById(id); };
 
   function esc(s) {
@@ -180,18 +209,54 @@ const PAGE = `<!doctype html>
     document.title = s.name + ' ' + d.ref + ' · code-with-quran';
   }
 
+  function apply(d) { lastRef = d.ref; render(d); }
+
   function poll() {
     fetch('/api/frame', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         missed = 0;
         $('wrap').classList.remove('stale');
-        if (d.ref !== lastRef) { lastRef = d.ref; render(d); }
+        if (d.ref !== lastRef && following) apply(d);
       })
       .catch(function () {
         if (++missed >= 3) $('wrap').classList.add('stale');
       });
   }
+
+  function nav(url) {
+    fetch(url, { method: 'POST' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(apply)
+      .catch(function () {});
+  }
+
+  function setFollow(on) {
+    following = on;
+    var el = $('follow');
+    el.textContent = on ? '● following' : '○ paused';
+    el.className = on ? '' : 'off';
+    if (on) poll();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    switch (e.key) {
+      case 'j': case 'ArrowRight': case 'ArrowDown': case ' ':
+        e.preventDefault(); nav('/api/move?d=1'); break;
+      case 'k': case 'ArrowLeft': case 'ArrowUp':
+        e.preventDefault(); nav('/api/move?d=-1'); break;
+      case 'g': {
+        e.preventDefault();
+        var ref = prompt('Go to (e.g. 2:255, Al-Kahf):');
+        if (ref) nav('/api/goto?ref=' + encodeURIComponent(ref.trim()));
+        break;
+      }
+      case 'f': e.preventDefault(); setFollow(!following); break;
+      case 'r': e.preventDefault(); poll(); break;
+      case 'q': case 'Escape': window.close(); break;
+    }
+  });
 
   poll();
   setInterval(poll, 2000);
@@ -214,39 +279,64 @@ function createServer(opts = {}) {
   const span = opts.span || DEFAULT_SPAN;
   const server = http.createServer((req, res) => {
     if (opts.onHit) opts.onHit();
-    const url = req.url || '/';
+    const [pathname, query = ''] = (req.url || '/').split('?');
+    const json = (code, obj) => {
+      res.writeHead(code, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      res.end(JSON.stringify(obj));
+    };
+    const frame = () => {
+      const m = query.match(/(?:^|&)span=(\d+)/);
+      return frameData(m ? Math.max(0, Math.min(6, parseInt(m[1], 10))) : span);
+    };
 
-    if (req.method !== 'GET') {
-      res.writeHead(405).end();
-      return;
-    }
-    if (url === '/' || url.startsWith('/?')) {
+    if (req.method === 'GET' && (pathname === '/' || pathname === '')) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       res.end(PAGE);
       return;
     }
-    if (url === '/api/frame' || url.startsWith('/api/frame?')) {
-      let body;
+    if (req.method === 'GET' && pathname === '/api/frame') {
       try {
-        const q = url.split('?')[1] || '';
-        const m = q.match(/(?:^|&)span=(\d+)/);
-        const s = m ? Math.max(0, Math.min(6, parseInt(m[1], 10))) : span;
-        body = JSON.stringify(frameData(s));
+        json(200, frame());
       } catch (err) {
-        res.writeHead(500, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: String(err && err.message) }));
+        json(500, { error: String(err && err.message) });
+      }
+      return;
+    }
+    // writes: page-driven navigation (j/k/g). localhost only, same-origin only.
+    if (req.method === 'POST' && (pathname === '/api/move' || pathname === '/api/goto')) {
+      if (!sameOrigin(req)) {
+        res.writeHead(403).end();
         return;
       }
-      res.writeHead(200, {
-        'content-type': 'application/json; charset=utf-8',
-        'cache-control': 'no-store',
-      });
-      res.end(body);
+      try {
+        if (pathname === '/api/move') {
+          const m = query.match(/(?:^|&)d=(-?\d+)/);
+          move(m ? parseInt(m[1], 10) : 0);
+        } else {
+          const m = query.match(/(?:^|&)ref=([^&]+)/);
+          if (!m) return json(400, { error: 'missing ref' });
+          goto(decodeURIComponent(m[1]));
+        }
+        json(200, frame());
+      } catch (err) {
+        json(400, { error: String(err && err.message) });
+      }
       return;
     }
     res.writeHead(404, { 'content-type': 'text/plain' }).end('not found');
   });
   return server;
+}
+
+/** Reject a cross-site write (a stray page poking 127.0.0.1). Missing Origin = a
+ *  direct/programmatic call, allowed; a present Origin must be loopback. */
+function sameOrigin(req) {
+  const o = req.headers.origin;
+  if (!o) return true;
+  return /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(o);
 }
 
 /** Listen on the first free port at/above `start`. Resolves { server, port }. */
@@ -362,6 +452,8 @@ module.exports = {
   DEFAULT_PORT,
   DEFAULT_SPAN,
   frameData,
+  move,
+  goto,
   createServer,
   listen,
   serve,

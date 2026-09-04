@@ -26,6 +26,7 @@ test.afterEach(() => {
 
 test('open advances the pointer and is idempotent under cooldown', () => {
   const wwy = require('../src/index');
+  wwy.setConfigKey('cooldownMinutes', '3'); // default is 0 — opt into the guard here
   const t0 = new Date('2026-01-01T00:00:00Z');
 
   const first = wwy.open({ now: t0 });
@@ -55,6 +56,17 @@ test('open advances the pointer and is idempotent under cooldown', () => {
   assert.equal(s.totalOpened, 3);
   assert.deepEqual(s.position, { surah: 1, ayah: 4 });
   assert.equal(s.recent.length, 3);
+});
+
+test('no cooldown by default — every prompt advances', () => {
+  const wwy = require('../src/index');
+  const t0 = new Date('2026-01-01T00:00:00Z');
+  assert.equal(wwy.getConfig().cooldownMinutes, 0);
+
+  wwy.open({ now: t0 });
+  const soon = wwy.open({ now: new Date(t0.getTime() + 1000) }); // 1s later
+  assert.equal(soon.opened, true);
+  assert.deepEqual(wwy.status().position, { surah: 1, ayah: 3 });
 });
 
 test('dry-run opens nothing and persists nothing', () => {

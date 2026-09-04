@@ -43,11 +43,13 @@ const HELP = `code-with-quran v${VERSION}
 Read the Qur'an while a Claude Code session works — each prompt advances you one
 ayah from where you last left off.
 
-Keep a reader open in a second pane:
-  code-with-quran read
-Start Claude sessions with the wrapper so the hook advances that reader:
-  claude --cwq        activate for this session
-  claude --cwq-dgr    activate + --dangerously-skip-permissions
+Keep a reader open: a terminal pane (code-with-quran read) or the browser
+(code-with-quran serve). Start Claude sessions with the wrapper so the hook
+advances it:
+  claude --cwq              activate for this session
+  claude --cwq-dgr          activate + --dangerously-skip-permissions
+  claude --cwq-browser      activate, reading in the browser this session
+  claude --cwq-dgr-browser  --cwq-dgr + browser
   (install the wrapper: code-with-quran shell-init --append)
 
 USAGE
@@ -200,8 +202,10 @@ function main() {
 
     case 'start': {
       const cfg = cwq.getConfig();
-      const surface = cfg.surface || 'tui';
-      const res = {};
+      const surface =
+        (flags.surface && flags.surface !== true && String(flags.surface)) ||
+        cwq.effectiveSurface(cfg);
+      const res = { surface };
       if (surface === 'tui' || surface === 'both') {
         const p = pane.openPane({ auto: true });
         res.pane = p;
@@ -282,7 +286,7 @@ function main() {
       } else {
         autopaneNote = `  (${mux} — pane opens on 'claude --cwq')`;
       }
-      const showWeb = s.config.surface === 'web' || s.config.surface === 'both' || s.webReader;
+      const showWeb = s.surface === 'web' || s.surface === 'both' || s.webReader;
       const lines = [
         `Activation ${active ? 'ON  (this session was started with --cwq)' : 'OFF (plain claude — hook is a no-op)'}`,
         `Reader     ${reader}`,
@@ -292,7 +296,9 @@ function main() {
         `Advances   ${s.opens}  (total ${s.totalOpened})`,
         `Last       ${s.lastOpenedAt || '—'}`,
         `Started    ${s.startedAt || '—'}`,
-        `Surface    ${s.config.surface}${s.config.surface === 'browser' ? `  (source ${s.config.source})` : ''}`,
+        `Surface    ${s.surface}` +
+          (s.surfaceOverridden ? '  (this session — started with --cwq-browser)' : '') +
+          (s.surface === 'browser' ? `  (source ${s.config.source})` : ''),
         `Autopane   ${autopane}${autopaneNote}`,
         `Enabled    ${s.config.enabled}   ayatPerSession=${s.config.ayatPerSession}   cooldown=${s.config.cooldownMinutes}m   loop=${s.config.loop}`,
       ];

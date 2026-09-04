@@ -1,7 +1,15 @@
 'use strict';
 
 const quran = require('./quran');
-const { loadConfig, saveConfig, coerceValue, DEFAULTS, KEY_TYPES } = require('./config');
+const {
+  loadConfig,
+  saveConfig,
+  coerceValue,
+  effectiveSurface,
+  surfaceOverride,
+  DEFAULTS,
+  KEY_TYPES,
+} = require('./config');
 const { loadState, saveState, resetState, position } = require('./state');
 const { openUrl } = require('./open');
 const { isSessionActive } = require('./session');
@@ -67,7 +75,7 @@ function open(opts = {}) {
   }
 
   const next = quran.advance(shownFrom, config.ayatPerSession, config.loop);
-  const surface = config.surface || 'tui';
+  const surface = effectiveSurface(config);
   const usedBrowser = surface === 'browser';
   const usedWeb = surface === 'web' || surface === 'both';
 
@@ -157,6 +165,8 @@ function status() {
     recent: state.history.slice(-5).reverse(),
     reader: readerRegistry.current(),
     webReader: webRegistry.current(),
+    surface: effectiveSurface(config),
+    surfaceOverridden: surfaceOverride() !== null,
     config,
   };
 }
@@ -212,6 +222,7 @@ module.exports = {
   reset,
   getConfig,
   setConfigKey,
+  effectiveSurface,
   quran,
   DEFAULTS,
   KEY_TYPES,

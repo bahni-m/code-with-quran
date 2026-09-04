@@ -15,10 +15,17 @@
 
 const ENV_VAR = 'CODE_WITH_QURAN';
 
+/**
+ * Per-session surface override. `claude --cwq-browser` exports
+ * CODE_WITH_QURAN_SURFACE=web so that one session reads in the browser without
+ * touching `~/.code-with-quran/config.json`.
+ */
+const SURFACE_ENV_VAR = 'CODE_WITH_QURAN_SURFACE';
+
 /** @returns {boolean} true when this session was activated via the wrapper. */
 function isSessionActive(env = process.env) {
   const v = env[ENV_VAR];
   return v === '1' || v === 'true';
 }
 
-module.exports = { ENV_VAR, isSessionActive };
+module.exports = { ENV_VAR, SURFACE_ENV_VAR, isSessionActive };
