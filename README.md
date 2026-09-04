@@ -18,10 +18,9 @@ time — resuming from wherever you last left off.
 ---
 
 Claude starts working, the ayah in your other pane moves forward, and you read a
-few lines instead of watching a spinner. Read it in a terminal pane, or — since a
-terminal grid can't lay out right-to-left Arabic reliably under tmux — in a
-bundled browser page (`config surface web`). The whole Uthmani text ships with
-the tool (~1.3 MB), so either reader is instant and works offline.
+few lines instead of watching a spinner. Read it in a terminal pane or a bundled
+browser page. The whole Uthmani text ships with the tool (~1.3 MB), so either
+reader is instant and works offline.
 
 ```
                           Al-Baqarah · البقرة · The Cow · Medinan
@@ -52,24 +51,17 @@ Both writers back up the file they touch (`*.bak-<timestamp>`).
 
 ## Using it day to day
 
-**Terminal or browser?** The terminal reader is the default. It renders Arabic
-right-to-left correctly in a terminal that runs the bidi algorithm (most modern
-ones) — but **not through tmux or zellij**, which paint text cell-by-cell with no
-bidi. If you live in a multiplexer, switch to the browser reader:
+**Pick a surface.** The terminal reader is the default. The browser reader is a
+`code-with-quran config surface web` away — a quiet local page that follows the
+same pointer — and is the right choice under tmux or zellij (see
+[Right-to-left Arabic in the terminal](#right-to-left-arabic-in-the-terminal)).
 
-```bash
-code-with-quran config surface web    # a quiet local page, offline, one tab
-```
-
-It uses the same bundled text and follows the same pointer — Arabic just renders
-the way a browser always gets right.
-
-**In tmux or zellij (terminal reader)?** `claude --cwq` splits off a reader pane
+**Terminal reader in tmux or zellij?** `claude --cwq` splits off the reader pane
 for you. The first session opens it; later sessions reuse the same pane (one
 reader, shared). `code-with-quran status` shows an `Autopane` line. Turn it off
 with `code-with-quran config autopane off`.
 
-**Not in a multiplexer?** Open a reader in a pane you can see — a second
+**Terminal reader, no multiplexer?** Open one in a pane you can see — a second
 terminal, an editor terminal tab — and leave it there:
 
 ```bash
@@ -115,7 +107,7 @@ Config lives in `~/.code-with-quran/config.json`; set values with
 | `enabled` | `true` | Master switch. `false` makes advancing a no-op (the reader still works manually). |
 | `surface` | `tui` | Where an advance shows up: `tui` (terminal pane), `web` (bundled browser page), `browser` (an external site), or `both` (tui + web). |
 | `autopane` | `auto` | Auto-open the reader pane on `claude --cwq`: `auto` splits a pane when you're in tmux or zellij, `off` never does, `tmux`/`zellij` pin it to one. |
-| `direction` | `logical` | How the **terminal** reader emits Arabic. `logical` sends raw text for the terminal to shape and reorder (correct wherever bidi works). `visual` reshapes and reverses it itself, for a bare terminal with no bidi at all. Under tmux/zellij neither is reliable — use `surface web`. |
+| `direction` | `logical` | How the **terminal** reader emits Arabic. `logical` sends raw text for the terminal to shape and reorder; `visual` reshapes and reverses it in code for a bare terminal with no bidi. See [Right-to-left Arabic in the terminal](#right-to-left-arabic-in-the-terminal). |
 | `source` | `quran.com` | External site for `surface browser` — `quran.com`, `tanzil`, `quranwbw`, `alquran.cloud`. |
 | `browser` | `""` | Explicit browser command. Empty = your OS default. |
 | `browserArgs` | `""` | Extra arguments for that command. |
@@ -131,6 +123,29 @@ code-with-quran serve                    # start the web page yourself (prints i
 
 The web page binds `127.0.0.1` only, opens one tab, polls the pointer, and shuts
 itself down a few minutes after you close the tab.
+
+## Right-to-left Arabic in the terminal
+
+A terminal grid can't lay out right-to-left Arabic reliably, and **tmux and
+zellij make it worse**: they paint text cell by cell with no bidi algorithm, so
+the terminal underneath never gets to reorder a whole line. Depending on your
+terminal you'll see words in left-to-right order, the ayah-end marker on the
+wrong side, or — with `direction: visual` — half-reversed text.
+
+The fix is not to fight it. Use the browser reader:
+
+```bash
+code-with-quran config surface web
+```
+
+It renders the same text the way a browser always gets right, and follows the
+same pointer.
+
+The terminal reader (`surface tui`) is fine **outside** a multiplexer, in a
+terminal that runs the bidi algorithm itself — most modern ones do
+(`direction: logical`, the default). `direction: visual` reshapes and reverses
+each line in code for a bare terminal with no bidi at all, like plain xterm; it
+is not a tmux workaround.
 
 ## Turn it off
 
